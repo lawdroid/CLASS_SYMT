@@ -2,27 +2,44 @@
  *
  *  Hidden SU(2)_D Yang-Mills afterglow dark-energy module for CLASS_SYMT.
  *
- *  Implements the causal imperfect fluid described in Martin & Koh (2026),
+ *  Implements the causal imperfect fluid described in Martin & Koh (April 2026),
  *  "Dark Energy as the Thermodynamic Afterglow of a Hidden Gauge-Theory
  *  Transition." The fluid carries a Müller-Israel-Stewart memory variable
- *  Sigma(tau) and couples to the cold matter sector via the signed kernel
+ *  Sigma and couples to the cold matter sector via the signed kernel
  *
- *      Psi(r) = 4 r (r - 1) / (1 + r)^3,   r = rho_c / rho_X
+ *      (35)  Psi(r) = 4 r (r - 1) / (1 + r)^3,   r = rho_c / rho_X   [§4.2]
  *
- *  The loading-unloading law (Eq. 37) and derived exchange law (Eq. 42) are:
+ *  Paper equations used below (ALL VERIFIED against the PDF):
  *
- *      u^mu d_mu Sigma = -(Theta / (3 c_D)) * [1 - beta * Psi(r)] * Sigma
- *      Q               = -(beta / c_D) * H * Psi(r) * rho_X
+ *      (31)  w_X = p_X / rho_X = -1 + 1/(3 c_D)                       [§4.1]
+ *      (37)  u^mu d_mu Sigma = -(Theta/(3 c_D)) [1 - beta Psi(r)] Sigma [§4.3]
+ *      (38)  Sigma_dot       = -(H / c_D) [1 - beta Psi(r)] Sigma     [§4.3]
+ *      (42)  Q               = -(beta / c_D) H Psi(r) rho_X           [§4.3]
+ *      (43)  rho_X_dot       = -(H / c_D) [1 - beta Psi(r)] rho_X     [§4.3]
+ *      (55)  rho_X ∝ a^(-1/c_D),  w_eff -> w_X                         [§5.1]
  *
- *  PHASE 0 SCAFFOLD: prototypes and struct only. Integrator stubs live in
- *  source/afterglow/afterglow.c and currently return _SUCCESS_ without
- *  modifying CLASS state (LCDM limit).
+ *  PHASE 1: background sector complete.
+ *    - afterglow_kernel_Psi()            : signed kernel Psi(r)
+ *    - afterglow_exchange_Q()            : derived exchange law Q
+ *    - afterglow_background_rhs()        : d/dN of {rho_X, Sigma, rho_dr_D}
+ *    - afterglow_background_evolve()     : 4th-order Runge-Kutta integrator
+ *                                          over a user-supplied N = ln(a) grid
+ *
+ *  Units: energy densities are carried in units of rho_crit_0 so that
+ *  rho_X(N=0) = Omega0_X at a = 1. The caller multiplies by rho_crit_0
+ *  before handing the values to the CLASS background state vector.
  */
 
 #ifndef __AFTERGLOW__
 #define __AFTERGLOW__
 
 #include "common.h"
+
+/* ─── Derivative vector layout ───────────────────────────────────────── */
+#define AFTERGLOW_NBG 3             /**< number of background DOFs        */
+#define AFTERGLOW_IDX_RHO_X     0   /**< index for rho_X / rho_crit_0     */
+#define AFTERGLOW_IDX_SIGMA     1   /**< index for Sigma / rho_crit_0     */
+#define AFTERGLOW_IDX_RHO_DR_D  2   /**< index for rho_dr,D / rho_crit_0  */
 
 /* ─── User parameters (parsed from .ini) ─────────────────────────────── */
 struct afterglow_params {
@@ -52,12 +69,46 @@ struct afterglow_pt_indices {
   int pt_size;
 };
 
-/* ─── API (scaffold — implementations return _SUCCESS_) ──────────────── */
+/* ─── Core physics ───────────────────────────────────────────────────── */
+
+/**
+ *  Signed loading kernel  Psi(r) = 4 r (r - 1) / (1 + r)^3.  Pure function.
+ */
 int afterglow_kernel_Psi(double r, double * Psi);
-int afterglow_background_derivs(double z, double * y, double * dy,
-                                 struct afterglow_params * ap);
+
+/**
+ *  Derived exchange law  Q = -(beta / c_D) * H * Psi(r) * rho_X  (Eq. 42).
+ */
 int afterglow_exchange_Q(double H, double r, double rho_X,
                           struct afterglow_params * ap, double * Q);
+
+/**
+ *  Right-hand side d/dN of the background vector y = {rho_X, Sigma, rho_dr_D}.
+ *
+ *  N = ln(a), with a = 1 today. Equations integrated:
+ *
+ *      d rho_X / dN     = -(1/c_D) [1 - beta * Psi(r)] * rho_X           (Eq. 43)
+ *      d Sigma / dN     = -(1/c_D) [1 - beta * Psi(r)] * Sigma            (Eq. 38)
+ *      d rho_dr,D / dN  = -4 rho_dr,D                                      (free radiation)
+ *
+ *  with w_X = -1 + 1/(3 c_D) [Eq. 31] and r = rho_c / rho_X [Eq. 32].
+ *  For Phase 1 the cold
+ *  matter is  Ω_c0 * exp(-3N)  (no CDM backreaction yet).
+ */
+int afterglow_background_rhs(double N, const double * y, double * dy,
+                              struct afterglow_params * ap, double Omega0_c);
+
+/**
+ *  4th-order Runge-Kutta integrator for the afterglow background sector.
+ *  Evolves backward in N = ln(a) from N_grid[0] = 0 (today) to N_grid[N_steps-1].
+ */
+int afterglow_background_evolve(struct afterglow_params * ap,
+                                 double Omega0_X, double Omega0_c,
+                                 int N_steps, const double * N_grid,
+                                 double * rho_X_out, double * Sigma_out,
+                                 double * rho_dr_out);
+
+/* ─── Lifecycle ──────────────────────────────────────────────────────── */
 int afterglow_init(struct afterglow_params * ap);
 int afterglow_free(struct afterglow_params * ap);
 
