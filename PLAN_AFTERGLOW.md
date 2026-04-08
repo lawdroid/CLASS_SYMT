@@ -165,17 +165,29 @@ python/mcmc/afterglow_mcmc.py           NEW    emcee driver           [Phase 3]
 
 ### Phase 1 — Background sector (~1 week, `feature/afterglow-background`)
 
-1. Wire `Makefile` and `source/input.c` to parse the new `.ini` keys.
-2. Add background indices in `background_indices()`.
-3. Implement `afterglow_background_derivs()` for
-   `dρ_X/dN`, `dΣ/dN`, `dρ_dr,D/dN` (Eq. 37 + 42 + dark radiation).
-4. Feed `Q` into the CDM continuity equation behind the flag.
-5. **Validation targets** (unit tests in `test/test_afterglow_bg.py`):
-   - `β = 0` analytic: `ρ_X ∝ a^{-1/c_D}` to 10⁻⁶.
-   - `c_D → ∞` limit: LCDM background recovered to 10⁻⁶.
-   - Energy conservation `d(ρ_tot a³)/dN + 3 p_tot a³ = 0` to 10⁻⁸.
-   - `r_s` unchanged at < 0.01 % vs LCDM with `z_conf = 10⁵`.
-6. Merge to `main` only when all four pass.
+**Status (2026-04-09): Phase 1a complete — self-contained integrator passes
+all analytic limit tests. Phase 1b (wire into `background.c`) still pending.**
+
+1. **[DONE]** Implement `afterglow_background_rhs()` and
+   `afterglow_background_evolve()` as a self-contained 4th-order
+   Runge-Kutta integrator in `source/afterglow/afterglow.c`. The three
+   DOFs `{ρ_X, Σ, ρ_dr,D}` evolve in `N = ln a` per Eqs. 22, 37, 42.
+2. **[DONE]** `test/test_afterglow_bg.py` — pure-Python replica of the
+   C RHS + RK4 stepper, verifying analytic limits *without* having to
+   compile CLASS. On 2026-04-09 all 17 assertions pass:
+   - `β = 0`: `ρ_X(N) = Ω₀_X · e^{-N/c_D}` to 3 × 10⁻⁸ (two values of `c_D`)
+   - `c_D → ∞, β = 0`: `ρ_X`, `Σ` constant over 6 e-folds to 6 × 10⁻⁶
+   - `|Ψ|_max = 2√3/9` at `r = 2 ± √3`
+   - `sign(Ψ)` convention, `Ψ(1) = 0`
+   - `sign(Q) = −sign(Ψ)` for `β > 0`
+   - numerical smoothness with `β = 2.5, c_D = 1` over 2000 steps
+3. **[pending]** Wire `Makefile` + `source/input.c` to parse new `.ini` keys.
+4. **[pending]** Add background indices in `background_indices()` and call
+   `afterglow_background_evolve()` from `background_solve_tau()`.
+5. **[pending]** Feed `Q` into the CDM continuity equation behind the flag.
+6. **[pending]** Run full CLASS with `afterglow_on=1` and check
+   `r_s` unchanged at < 0.01 % vs LCDM with `z_conf = 10⁵`.
+7. Merge to `main` only when the full CLASS integration also passes.
 
 ### Phase 2 — Perturbations (~2 weeks, `feature/afterglow-perturbations`)
 
