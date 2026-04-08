@@ -1,3 +1,47 @@
+CLASS_SYMT: CLASS + Hidden SU(2)_D Yang-Mills Afterglow Dark Energy
+===================================================================
+
+CLASS_SYMT is an **independent** derivative of CLASS (not a fork) that
+adds the hidden-sector "afterglow" dark-energy module of
+Martin & Koh (April 2026),
+**"Dark Energy as the Thermodynamic Afterglow of a Hidden Gauge-Theory
+Transition."**
+
+📄 **Reference paper (included in this repo):**
+[`docs/Martin_Koh_Afterglow_April2026.pdf`](docs/Martin_Koh_Afterglow_April2026.pdf)
+
+GitHub renders the PDF inline when you click the link above. The paper
+is the single source of truth for every equation implemented in
+`source/afterglow/` and `include/afterglow/`. Each comment in that code
+cites the paper equation number it implements (all verified against the
+PDF). See also:
+
+- [`README_AFTERGLOW.md`](README_AFTERGLOW.md) — project overview, parameters, phase plan
+- [`PLAN_AFTERGLOW.md`](PLAN_AFTERGLOW.md) — equation-to-code map and phased rollout
+- [`ATTRIBUTION.md`](ATTRIBUTION.md) — upstream CLASS acknowledgements and license
+- [`afterglow.ini`](afterglow.ini) — sample input file (LCDM-compatible by default)
+- [`test/test_afterglow_bg.py`](test/test_afterglow_bg.py) — Phase 1a unit tests (19 passing)
+
+Key paper equations implemented (all VERIFIED):
+
+| Eq. | Section | Meaning |
+|-----|---------|---------|
+| (31) | §4.1 | Intrinsic EoS `w_X = −1 + 1/(3 c_D)` |
+| (32) | §4.2 | Density ratio `r = ρ_c / ρ_X` |
+| (35) | §4.2 | Signed kernel `Ψ(r) = 4 r (r−1) / (1+r)³` |
+| (36) | §4.2 | Sign convention of Ψ |
+| (37) | §4.3 | Covariant loading–unloading law |
+| (38) | §4.3 | `Σ̇ = −(H/c_D)[1 − β Ψ(r)] Σ` |
+| (42) | §4.3 | Exchange law `Q = −(β/c_D) H Ψ(r) ρ_X` |
+| (43) | §4.3 | `ρ̇_X = −(H/c_D)[1 − β Ψ(r)] ρ_X` |
+| (55) | §5.1 | Late-time scaling `ρ_X ∝ a^(−1/c_D)` |
+
+---
+
+Below is the original CLASS README, kept verbatim for attribution.
+
+---
+
 CLASS: Cosmic Linear Anisotropy Solving System  {#mainpage}
 ==============================================
 
