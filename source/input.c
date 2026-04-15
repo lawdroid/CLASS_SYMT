@@ -3315,6 +3315,38 @@ int input_read_parameters_species(struct file_content * pfc,
     }
   }
 
+  /** 8.a.4) Afterglow dark energy (Martin & Koh 2026) */
+  class_call(parser_read_double(pfc,"afterglow_on",&param1,&flag1,errmsg),
+             errmsg,errmsg);
+  if (flag1 == _TRUE_ && param1 > 0.) {
+    pba->has_afterglow = _TRUE_;
+    pba->ag.afterglow_on = 1;
+
+    /* default parameter values (can be overridden below) */
+    pba->Omega0_X        = 0.69;
+    pba->ag.c_D          = 1.0;
+    pba->ag.beta_aft     = 0.0;
+    pba->ag.Sigma_today  = -1.0;     /* -1 => auto: Omega0_X/(3 c_D) */
+    pba->ag.cs2_X        = 1.0;
+    pba->ag.z_conf       = 1.0e5;
+    pba->ag.Omega0_dr_dark = 0.0;
+
+    class_call(parser_read_double(pfc,"Omega_X",     &param1,&flag1,errmsg),errmsg,errmsg);
+    if (flag1 == _TRUE_) pba->Omega0_X       = param1;
+    class_call(parser_read_double(pfc,"c_D",         &param1,&flag1,errmsg),errmsg,errmsg);
+    if (flag1 == _TRUE_) pba->ag.c_D         = param1;
+    class_call(parser_read_double(pfc,"beta_aft",    &param1,&flag1,errmsg),errmsg,errmsg);
+    if (flag1 == _TRUE_) pba->ag.beta_aft    = param1;
+    class_call(parser_read_double(pfc,"Sigma_today", &param1,&flag1,errmsg),errmsg,errmsg);
+    if (flag1 == _TRUE_) pba->ag.Sigma_today = param1;
+
+    /* disable CLASS's default lambda so total Omega sums to 1 */
+    pba->Omega0_lambda = 0.;
+  }
+  else {
+    pba->has_afterglow = _FALSE_;
+  }
+
   /** 8.b) If Omega scalar field (SCF) is different from 0 */
   if (pba->Omega0_scf != 0.){
 
@@ -5918,6 +5950,16 @@ int input_default_params(struct background *pba,
   pba->wa_fld = 0.;
   /** 9.a.2.2) 'EDE' case */
   pba->Omega_EDE = 0.;
+  /** 9.a.3) Afterglow dark energy (Martin & Koh 2026) -- off by default */
+  pba->has_afterglow = _FALSE_;
+  pba->Omega0_X = 0.;
+  pba->ag.afterglow_on = 0;
+  pba->ag.c_D = 1.0;
+  pba->ag.beta_aft = 0.0;
+  pba->ag.Sigma_today = -1.0;
+  pba->ag.cs2_X = 1.0;
+  pba->ag.z_conf = 1.0e5;
+  pba->ag.Omega0_dr_dark = 0.0;
   /** 9.b) Omega scalar field */
   /** 9.b.1) Potential parameters and initial conditions */
   pba->scf_parameters = NULL;

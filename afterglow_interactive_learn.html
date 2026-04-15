@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Afterglow Dark Energy — Interactive Learning</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.27.0/plotly.min.js"></script>
+<style>
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;margin:0;background:#0f172a;color:#e2e8f0;padding:24px;max-width:1400px;margin:0 auto}
+  h1{color:#f1f5f9;margin-top:0;font-size:24px}
+  h2{color:#94a3b8;font-size:15px;letter-spacing:.05em;text-transform:uppercase;margin-top:32px;border-bottom:1px solid #334155;padding-bottom:6px}
+  .intro{background:#1e293b;padding:16px 20px;border-radius:8px;border-left:4px solid #22d3ee;font-size:14px;line-height:1.55}
+  .intro code{background:#0f172a;padding:1px 6px;border-radius:3px;color:#f9a8d4}
+  .controls{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;margin:16px 0}
+  .ctrl{background:#1e293b;padding:12px 14px;border-radius:6px}
+  .ctrl label{display:flex;justify-content:space-between;font-size:13px;color:#cbd5e1;margin-bottom:4px}
+  .ctrl .val{color:#fbbf24;font-family:ui-monospace,Consolas,monospace}
+  .ctrl input[type=range]{width:100%}
+  .plots{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  @media(max-width:900px){.plots{grid-template-columns:1fr}}
+  .plot{background:#1e293b;border-radius:6px;padding:8px;height:360px}
+  .eq{background:#0f172a;padding:10px 14px;border-radius:4px;font-family:ui-monospace,Consolas,monospace;font-size:13px;margin:6px 0;color:#a5f3fc;border-left:3px solid #22d3ee}
+  .key{color:#fbbf24;font-weight:600}
+  .quiz{background:#1e293b;padding:14px 18px;border-radius:8px;margin-top:12px}
+  .quiz button{background:#0ea5e9;color:white;border:0;padding:6px 14px;border-radius:4px;cursor:pointer;margin-right:6px}
+  .quiz button:hover{background:#0284c7}
+  .quiz .feedback{margin-top:10px;padding:8px 12px;border-radius:4px;display:none;font-size:13px}
+  .quiz .feedback.correct{background:#064e3b;border-left:3px solid #10b981;display:block}
+  .quiz .feedback.wrong{background:#7f1d1d;border-left:3px solid #ef4444;display:block}
+  .tabs{display:flex;gap:4px;margin-top:12px;border-bottom:1px solid #334155}
+  .tab{padding:8px 16px;background:#1e293b;color:#94a3b8;cursor:pointer;border-radius:6px 6px 0 0;font-size:13px}
+  .tab.active{background:#334155;color:#f1f5f9;border-bottom:2px solid #22d3ee}
+  .tab-body{display:none;background:#1e293b;padding:16px 20px;border-radius:0 8px 8px 8px}
+  .tab-body.active{display:block}
+  .flash{color:#fbbf24}
+</style>
+</head>
+<body>
+
+<h1>Afterglow Dark Energy — Interactive Learner</h1>
+<div class="intro">
+  Hidden SU(2)<sub>D</sub> Yang-Mills <em>confinement-afterglow</em> dark energy from
+  Martin &amp; Koh (April 2026). Dark energy is not Λ: it's the <strong>cooling tail</strong> of a
+  hidden gauge transition at <code>Λ_D ≈ 2.3 meV</code>. A condensate Σ slowly relaxes, driving
+  an exchange current between CDM and the hidden fluid. Falsifiable prediction: <code>w_X &gt; −1</code> strictly.
+  Change the sliders and watch all four physics curves update live.
+</div>
+
+<div class="tabs">
+  <div class="tab active" data-tab="play">Play</div>
+  <div class="tab" data-tab="learn">Learn the Equations</div>
+  <div class="tab" data-tab="quiz">Quiz Yourself</div>
+</div>
+
+<div class="tab-body active" id="tab-play">
+  <div class="controls">
+    <div class="ctrl">
+      <label>relaxation index <b>c<sub>D</sub></b> <span class="val" id="lcD">1.00</span></label>
+      <input type="range" id="cD" min="0.4" max="3.0" step="0.01" value="1.0">
+    </div>
+    <div class="ctrl">
+      <label>exchange amplitude <b>β</b> <span class="val" id="lbeta">2.50</span></label>
+      <input type="range" id="beta" min="-5" max="5" step="0.05" value="2.5">
+    </div>
+    <div class="ctrl">
+      <label>Ω<sub>X,0</sub> <span class="val" id="lOmX">0.685</span></label>
+      <input type="range" id="OmX" min="0.3" max="0.9" step="0.005" value="0.685">
+    </div>
+    <div class="ctrl">
+      <label>Ω<sub>c,0</sub> <span class="val" id="lOmc">0.265</span></label>
+      <input type="range" id="Omc" min="0.1" max="0.6" step="0.005" value="0.265">
+    </div>
+  </div>
+  <div class="plots">
+    <div class="plot" id="plot-psi"></div>
+    <div class="plot" id="plot-w"></div>
+    <div class="plot" id="plot-rho"></div>
+    <div class="plot" id="plot-Q"></div>
+  </div>
+</div>
+
+<div class="tab-body" id="tab-learn">
+  <h2>Paper equations — hover over each to see role</h2>
+  <div class="eq" title="Eq. 30 §4.1">ρ_X = 3 c<sub>D</sub> Σ , p_X = −(3 c<sub>D</sub> − 1) Σ &nbsp;&nbsp;<span class="flash">(Eq. 30)</span></div>
+  <div class="eq" title="Eq. 31 §4.1">w_X = −1 + 1/(3 c<sub>D</sub>) &nbsp;→&nbsp; <span class="key">strictly &gt; −1</span> &nbsp;&nbsp;<span class="flash">(Eq. 31)</span></div>
+  <div class="eq" title="Eq. 32 §4.2">r ≡ ρ_c / ρ_X &nbsp;&nbsp;<span class="flash">(Eq. 32)</span></div>
+  <div class="eq" title="Eq. 35 §4.2">Ψ(r) = 4 r (r − 1) / (1 + r)³ &nbsp;|&nbsp;antisymmetric under r → 1/r &nbsp;&nbsp;<span class="flash">(Eq. 35)</span></div>
+  <div class="eq" title="Eq. 38 §4.3">dΣ / d(log a) = −(1/c<sub>D</sub>) [1 − β Ψ(r)] Σ &nbsp;&nbsp;<span class="flash">(Eq. 38)</span></div>
+  <div class="eq" title="Eq. 42 §4.3">Q = −(β/c<sub>D</sub>) H Ψ(r) ρ_X &nbsp;&nbsp;<span class="flash">(Eq. 42)</span></div>
+  <div class="eq" title="Eq. 43 §4.3">dρ_X / d(log a) = −(1/c<sub>D</sub>) [1 − β Ψ(r)] ρ_X &nbsp;&nbsp;<span class="flash">(Eq. 43)</span></div>
+  <div class="eq" title="Eq. 55 §5.1">ρ_X ∝ a^(−1/c<sub>D</sub>) (late-time, non-crossing) &nbsp;&nbsp;<span class="flash">(Eq. 55)</span></div>
+  <h2>Physical meaning — short</h2>
+  <p style="font-size:14px;line-height:1.6">
+  The condensate Σ is a memory variable. At the crossing <code>r = 1</code>, Ψ vanishes by strict detailed balance of the CDM↔X exchange
+  (antisymmetry <code>Ψ(1/r) = −Ψ(r)</code> forces it). Early universe <code>r ≫ 1</code>: Ψ &gt; 0, Q &lt; 0, CDM loads the hidden fluid.
+  Future <code>r ≪ 1</code>: Ψ &lt; 0, Q &gt; 0, hidden fluid unloads back into CDM. Extrema of Ψ are at
+  <code>r = 2 ± √3</code> with <code>|Ψ|<sub>max</sub> = 2√3/9 ≈ 0.3849</code>.
+  </p>
+</div>
+
+<div class="tab-body" id="tab-quiz">
+  <div class="quiz">
+    <p><b>Q1.</b> If DESI/Euclid measured w = −1.05, what happens to this model?</p>
+    <button data-q="1" data-a="kill">Ruled out</button>
+    <button data-q="1" data-a="ok">Still compatible</button>
+    <button data-q="1" data-a="tune">Tune c_D</button>
+    <div class="feedback" id="fb1"></div>
+  </div>
+  <div class="quiz">
+    <p><b>Q2.</b> What is |Ψ|<sub>max</sub> (to 3 decimals)?</p>
+    <button data-q="2" data-a="0.333">0.333</button>
+    <button data-q="2" data-a="0.385">0.385</button>
+    <button data-q="2" data-a="0.500">0.500</button>
+    <button data-q="2" data-a="1.000">1.000</button>
+    <div class="feedback" id="fb2"></div>
+  </div>
+  <div class="quiz">
+    <p><b>Q3.</b> At what value of r does Ψ vanish by antisymmetry?</p>
+    <button data-q="3" data-a="0">r = 0</button>
+    <button data-q="3" data-a="1">r = 1</button>
+    <button data-q="3" data-a="inf">r → ∞</button>
+    <div class="feedback" id="fb3"></div>
+  </div>
+  <div class="quiz">
+    <p><b>Q4.</b> For c<sub>D</sub> = 1, what is w<sub>X</sub>?</p>
+    <button data-q="4" data-a="-1">−1</button>
+    <button data-q="4" data-a="-2/3">−2/3</button>
+    <button data-q="4" data-a="-1/3">−1/3</button>
+    <div class="feedback" id="fb4"></div>
+  </div>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+const Psi=r=>4*r*(r-1)/Math.pow(1+r,3);
+const wX=cD=>-1+1/(3*cD);
+
+// plot infrastructure
+const darkLayout=extra=>Object.assign({
+  paper_bgcolor:'#1e293b',plot_bgcolor:'#0f172a',font:{color:'#cbd5e1',size:11},
+  margin:{l:50,r:20,t:40,b:45},
+  xaxis:{gridcolor:'#334155',zerolinecolor:'#475569'},
+  yaxis:{gridcolor:'#334155',zerolinecolor:'#475569'}
+},extra);
+
+function update(){
+  const cD=parseFloat($('cD').value), beta=parseFloat($('beta').value),
+        OmX=parseFloat($('OmX').value), Omc=parseFloat($('Omc').value);
+  $('lcD').textContent=cD.toFixed(2);
+  $('lbeta').textContent=beta.toFixed(2);
+  $('lOmX').textContent=OmX.toFixed(3);
+  $('lOmc').textContent=Omc.toFixed(3);
+
+  // 1) Psi(r)
+  const rs=[],ps=[];
+  for(let i=1;i<=400;i++){const r=Math.pow(10,-3+6*i/400);rs.push(r);ps.push(Psi(r));}
+  const rcross=1, rpeak=2+Math.sqrt(3), rtrough=2-Math.sqrt(3);
+  Plotly.react('plot-psi',[
+    {x:rs,y:ps,mode:'lines',line:{color:'#22d3ee',width:2.5},name:'Ψ(r)'},
+    {x:[rcross],y:[0],mode:'markers',marker:{color:'#10b981',size:9},name:'r=1 crossing'},
+    {x:[rpeak,rtrough],y:[Psi(rpeak),Psi(rtrough)],mode:'markers',marker:{color:'#fbbf24',size:8},name:'extrema ±2√3/9'}
+  ],darkLayout({title:'Kernel Ψ(r) — Eq. 35',xaxis:{type:'log',title:'r = ρ_c / ρ_X'},yaxis:{title:'Ψ(r)'}}),{displayModeBar:false});
+
+  // 2) w_X and sound speed
+  const cDarr=[],wArr=[];
+  for(let i=0;i<=200;i++){const c=0.4+i*(3.0-0.4)/200;cDarr.push(c);wArr.push(-1+1/(3*c));}
+  Plotly.react('plot-w',[
+    {x:cDarr,y:wArr,mode:'lines',line:{color:'#f472b6',width:2.5},name:'w_X(c_D)'},
+    {x:[cD],y:[wX(cD)],mode:'markers',marker:{color:'#fbbf24',size:12,symbol:'diamond'},name:'current'},
+    {x:[0.4,3.0],y:[-1,-1],mode:'lines',line:{color:'#64748b',dash:'dash',width:1},name:'Λ (w=−1)'}
+  ],darkLayout({title:'Intrinsic EoS w_X — Eq. 31',xaxis:{title:'c_D'},yaxis:{title:'w_X',range:[-1.05,-0.65]}}),{displayModeBar:false});
+
+  // 3) rho_X and rho_c evolution (numerical ODE in log a)
+  const Na=400, logaMin=-3, logaMax=0.5;
+  const logas=[], rhoX=[], rhoC=[], rArr=[], QArr=[];
+  // terminal-forward integration from a=1 backward using d/dN = -(1/cD)[1-beta*Psi] rho_X
+  // Start at a=1 with rho_X = OmX, rho_c = Omc; integrate forward in N, and backward
+  let Narr=[];for(let i=0;i<=Na;i++)Narr.push(logaMin+(logaMax-logaMin)*i/Na);
+  const N0idx=Narr.findIndex(x=>x>=0);
+  // Integrate forward from N=0 to N=logaMax, and backward from 0 to logaMin
+  const simulate=(dir)=>{
+    let rX=OmX, rC=Omc;
+    const out=[];
+    const iStart = dir===1 ? N0idx : N0idx;
+    const step = dir===1 ? 1 : -1;
+    const end   = dir===1 ? Na : 0;
+    out[iStart]={rX,rC};
+    for(let i=iStart; dir===1 ? i<end : i>end; i+=step){
+      const dN=Narr[i+step]-Narr[i];
+      // RK2
+      const f=(rX,rC)=>{const r=rX>1e-30?rC/rX:1e30; const P=Psi(r); const fac=(1/cD)*(1-beta*P); return {drX:-fac*rX, drC:-3*rC};};
+      const k1=f(rX,rC);
+      const k2=f(rX+dN*k1.drX, rC+dN*k1.drC);
+      rX += 0.5*dN*(k1.drX+k2.drX);
+      rC += 0.5*dN*(k1.drC+k2.drC);
+      out[i+step]={rX,rC};
+    }
+    return out;
+  };
+  const fwd=simulate(1), bwd=simulate(-1);
+  for(let i=0;i<=Na;i++){
+    const d = (i>=N0idx)?fwd[i]:bwd[i];
+    logas.push(Narr[i]);
+    rhoX.push(d.rX); rhoC.push(d.rC);
+    const r=d.rX>1e-30?d.rC/d.rX:1e30;
+    rArr.push(r);
+    const H2 = d.rX + d.rC; // in H0^2 units, rough
+    QArr.push(-(beta/cD)*Math.sqrt(Math.max(H2,0))*Psi(r)*d.rX);
+  }
+  Plotly.react('plot-rho',[
+    {x:logas,y:rhoX,mode:'lines',line:{color:'#22d3ee',width:2.5},name:'ρ_X(a)'},
+    {x:logas,y:rhoC,mode:'lines',line:{color:'#f472b6',width:2.5},name:'ρ_c(a)'}
+  ],darkLayout({title:'Energy densities vs log a — Eqs. 43, 44',xaxis:{title:'log a'},yaxis:{type:'log',title:'ρ / ρ_crit,0'}}),{displayModeBar:false});
+
+  // 4) Exchange current Q(a)
+  Plotly.react('plot-Q',[
+    {x:logas,y:QArr,mode:'lines',line:{color:'#fbbf24',width:2.5},name:'Q(a)'},
+    {x:[logaMin,logaMax],y:[0,0],mode:'lines',line:{color:'#64748b',dash:'dash',width:1},showlegend:false}
+  ],darkLayout({title:'Exchange current Q — Eq. 42 (sign = sign of unloading)',xaxis:{title:'log a'},yaxis:{title:'Q / (H ρ_X)'}}),{displayModeBar:false});
+}
+
+['cD','beta','OmX','Omc'].forEach(id=>$(id).addEventListener('input',update));
+update();
+
+// tabs
+document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>{
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.tab-body').forEach(x=>x.classList.remove('active'));
+  t.classList.add('active');
+  $('tab-'+t.dataset.tab).classList.add('active');
+  if(t.dataset.tab==='play') setTimeout(update,10);
+}));
+
+// quiz
+const ans={1:'kill',2:'0.385',3:'1',4:'-2/3'};
+const explain={
+  1:'Correct — w_X = −1 + 1/(3 c_D) is strictly > −1 at the classical level. A measured w < −1 falsifies the model.',
+  2:'Correct — |Ψ|_max = 2√3/9 ≈ 0.3849, attained at r = 2 ± √3.',
+  3:'Correct — antisymmetry Ψ(1/r) = −Ψ(r) forces Ψ(1) = 0. r = 1 is the detailed-balance fixed point.',
+  4:'Correct — w_X(c_D=1) = −1 + 1/3 = −2/3, consistent with dark radiation dropping into a slow-roll afterglow.'
+};
+document.querySelectorAll('.quiz button').forEach(b=>b.addEventListener('click',()=>{
+  const q=b.dataset.q, a=b.dataset.a, fb=$('fb'+q);
+  if(a===ans[q]){fb.className='feedback correct';fb.textContent='✓ '+explain[q];}
+  else{fb.className='feedback wrong';fb.textContent='Not quite — try again.';}
+}));
+</script>
+</body>
+</html>

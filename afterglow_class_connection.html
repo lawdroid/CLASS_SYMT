@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Afterglow ↔ CLASS Connection: Interactive Explainer</title>
+<script src="https://cdn.plot.ly/plotly-2.30.0.min.js"></script>
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<style>
+  body { font-family: -apple-system, Segoe UI, Roboto, sans-serif; max-width: 1100px; margin: 20px auto; padding: 0 20px; background: #0f1420; color: #e6edf3; }
+  h1 { color: #58a6ff; border-bottom: 2px solid #30363d; padding-bottom: 8px; }
+  h2 { color: #ffa657; margin-top: 30px; }
+  .tabs { display: flex; gap: 2px; margin: 20px 0 0 0; border-bottom: 2px solid #30363d; }
+  .tab { padding: 10px 18px; background: #21262d; color: #8b949e; cursor: pointer; border-radius: 6px 6px 0 0; user-select: none; }
+  .tab.active { background: #1f6feb; color: white; }
+  .panel { display: none; padding: 20px; background: #161b22; border-radius: 0 0 8px 8px; border: 1px solid #30363d; }
+  .panel.active { display: block; }
+  .diagram { background: #0d1117; border: 1px solid #30363d; border-radius: 6px; padding: 16px; margin: 14px 0; font-family: 'SF Mono', Consolas, monospace; white-space: pre; overflow-x: auto; font-size: 13px; line-height: 1.4; }
+  .box { display: inline-block; padding: 8px 14px; border: 2px solid; border-radius: 6px; margin: 4px; cursor: pointer; transition: all 0.2s; font-weight: 600; }
+  .box.state { border-color: #58a6ff; background: #0c2d6b; }
+  .box.deriv { border-color: #ff7b72; background: #67060c; }
+  .box.aux { border-color: #8b949e; background: #30363d; }
+  .box.class { border-color: #3fb950; background: #0f3d1c; }
+  .box:hover { transform: scale(1.05); box-shadow: 0 0 12px currentColor; }
+  .box.selected { box-shadow: 0 0 16px #ffa657; border-color: #ffa657; }
+  .arrow { color: #ffa657; font-weight: bold; margin: 0 6px; }
+  .info { background: #0c2d6b; border-left: 4px solid #58a6ff; padding: 12px; margin: 12px 0; border-radius: 4px; min-height: 80px; }
+  .step-btn { background: #238636; color: white; border: none; padding: 8px 18px; border-radius: 6px; cursor: pointer; font-size: 14px; margin: 4px; }
+  .step-btn:hover { background: #2ea043; }
+  .step-btn:disabled { background: #30363d; color: #8b949e; cursor: not-allowed; }
+  code { background: #0d1117; padding: 2px 6px; border-radius: 3px; color: #ffa657; }
+  pre { background: #0d1117; padding: 12px; border-radius: 6px; overflow-x: auto; border: 1px solid #30363d; }
+  .quiz { background: #161b22; border: 1px solid #30363d; border-radius: 6px; padding: 16px; margin: 12px 0; }
+  .quiz button { display: block; width: 100%; text-align: left; background: #21262d; color: #e6edf3; border: 1px solid #30363d; padding: 10px; margin: 6px 0; border-radius: 4px; cursor: pointer; }
+  .quiz button:hover { background: #30363d; }
+  .quiz button.correct { background: #0f3d1c; border-color: #3fb950; }
+  .quiz button.wrong { background: #67060c; border-color: #ff7b72; }
+  .legend { display: flex; gap: 16px; margin: 10px 0; font-size: 13px; }
+  .hierarchy-row { display: flex; align-items: center; gap: 12px; padding: 10px; margin: 6px 0; background: #0d1117; border-radius: 6px; border-left: 4px solid; }
+  .rank { font-size: 28px; font-weight: bold; width: 40px; text-align: center; }
+  table { border-collapse: collapse; width: 100%; margin: 14px 0; }
+  th, td { padding: 10px; text-align: left; border-bottom: 1px solid #30363d; }
+  th { background: #21262d; color: #ffa657; }
+</style>
+</head>
+<body>
+
+<h1>Afterglow ↔ CLASS: The One Function That Connects Everything</h1>
+<p style="color:#8b949e;">Interactive learning tool — click the boxes, step through the integrator, and see why <code>dρ_X/dloga</code> is <em>the</em> connection point.</p>
+
+<div class="tabs">
+  <div class="tab active" onclick="showTab(0)">1. The Big Picture</div>
+  <div class="tab" onclick="showTab(1)">2. Click a Quantity</div>
+  <div class="tab" onclick="showTab(2)">3. Step the Integrator</div>
+  <div class="tab" onclick="showTab(3)">4. Hierarchy</div>
+  <div class="tab" onclick="showTab(4)">5. Quiz</div>
+</div>
+
+<div class="panel active" id="p0">
+<h2>Why CLASS only needs a derivative</h2>
+<p>CLASS is an <strong>ODE integrator</strong>. It holds a state vector <code>pvecback_B[]</code>, and at each step it asks every fluid module:</p>
+<div class="diagram">  "Given the current state y, what is dy/d(log a)?"</div>
+<p>For the afterglow module, two slots are ours:</p>
+<div class="diagram">  y[index_bi_rho_X]   ← ρ_X   (dark energy density)
+  y[index_bi_Sigma]   ← Σ    (memory variable)</div>
+<p>The glue API is exactly three functions:</p>
+<pre>afterglow_glue_initial_conditions()  // called ONCE, sets y at a_ini
+afterglow_glue_derivs()              // called EVERY STEP, returns dy/dlog a
+afterglow_glue_pressure()            // called when Friedmann needs p_tot</pre>
+<p>Everything else — $\Psi(r)$, $r = \rho_c/\rho_X$, $\beta$, $c_D$, the exchange current $Q$ — lives <em>inside</em> that one derivative call as intermediate arithmetic. CLASS never sees them.</p>
+
+<div class="info">
+  <strong>The one-sentence takeaway:</strong> <code>dρ_X/dloga</code> is THE connection because CLASS is an integrator and integrators consume derivatives. Eq. 43 is the ODE. The physics lives in that one scalar return value.
+</div>
+</div>
+
+<div class="panel" id="p1">
+<h2>Click any quantity to see its role at the CLASS interface</h2>
+<div class="legend">
+  <span><span class="box state" style="cursor:default">state</span> integrated by CLASS</span>
+  <span><span class="box deriv" style="cursor:default">derivative</span> returned from glue</span>
+  <span><span class="box aux" style="cursor:default">auxiliary</span> internal</span>
+  <span><span class="box class" style="cursor:default">CLASS native</span></span>
+</div>
+
+<div style="text-align:center; margin:20px 0;">
+  <div class="box state" onclick="showInfo('rho_X')">ρ_X</div>
+  <div class="box state" onclick="showInfo('Sigma')">Σ</div>
+  <div class="box deriv" onclick="showInfo('drho_X')">dρ_X/dloga</div>
+  <div class="box deriv" onclick="showInfo('dSigma')">dΣ/dloga</div>
+  <div class="box aux" onclick="showInfo('w_X')">w_X</div>
+  <div class="box aux" onclick="showInfo('p_X')">p_X</div>
+  <div class="box aux" onclick="showInfo('r')">r = ρ_c/ρ_X</div>
+  <div class="box aux" onclick="showInfo('Psi')">Ψ(r)</div>
+  <div class="box aux" onclick="showInfo('Q')">Q (exchange)</div>
+  <div class="box aux" onclick="showInfo('beta')">β</div>
+  <div class="box aux" onclick="showInfo('cD')">c_D</div>
+  <div class="box class" onclick="showInfo('rho_c')">ρ_c (CDM)</div>
+  <div class="box class" onclick="showInfo('rho_tot')">ρ_tot</div>
+</div>
+
+<div class="info" id="infoBox">Click a quantity above to learn its role.</div>
+</div>
+
+<div class="panel" id="p2">
+<h2>Step through one CLASS integration step</h2>
+<p>Watch what happens during <strong>one</strong> call of CLASS's ndf15/rkck stepper. Press <em>Next Step</em>.</p>
+<button class="step-btn" onclick="stepForward()">Next Step →</button>
+<button class="step-btn" onclick="resetSteps()" style="background:#6e7681;">Reset</button>
+
+<div class="diagram" id="stepDiag">CLASS state vector (pvecback_B):
+  y[rho_X] = 0.70 · H0²     ← set at IC
+  y[Sigma] = 0.233 · H0²    ← set at IC
+
+CLASS is about to take a step from log(a) = -7 forward...
+
+Press "Next Step" to begin.</div>
+
+<div class="info" id="stepInfo">Each press shows one operation in the chain that connects your afterglow code to CLASS's integrator.</div>
+</div>
+
+<div class="panel" id="p3">
+<h2>Hierarchy of importance at the glue interface</h2>
+
+<div class="hierarchy-row" style="border-color:#ff7b72;">
+  <div class="rank" style="color:#ff7b72;">1</div>
+  <div><strong>dρ_X/dloga</strong> — called every step, encodes Eq. 43. If wrong, everything is wrong. Test 7 in <code>test_afterglow_bg.py</code> pins this point-wise.</div>
+</div>
+<div class="hierarchy-row" style="border-color:#ff7b72;">
+  <div class="rank" style="color:#ff7b72;">2</div>
+  <div><strong>dΣ/dloga</strong> — same ODE structure (Eq. 38). But Σ doesn't enter Friedmann, so bugs here are silent in H(a).</div>
+</div>
+<div class="hierarchy-row" style="border-color:#58a6ff;">
+  <div class="rank" style="color:#58a6ff;">3</div>
+  <div><strong>ρ_X</strong> (state, not derivative) — written once at IC, read every step for ρ_tot. The IC bug (missing <code>pow(pba->H0,2)</code>) was a units mismatch on this read.</div>
+</div>
+<div class="hierarchy-row" style="border-color:#8b949e;">
+  <div class="rank" style="color:#8b949e;">4</div>
+  <div><strong>p_X (via w_X)</strong> — algebraic: $p_X = w_X \rho_X$, $w_X = -1 + 1/(3c_D)$. Trivial.</div>
+</div>
+<div class="hierarchy-row" style="border-color:#8b949e;">
+  <div class="rank" style="color:#8b949e;">5</div>
+  <div><strong>Ψ(r), r, β, c_D, Q</strong> — internal to the derivative call. CLASS never sees them.</div>
+</div>
+
+<h2 style="margin-top:30px;">What CLASS actually calls in Phase 1b</h2>
+<table>
+  <tr><th>When</th><th>Function</th><th>What it does</th></tr>
+  <tr><td>Once at a = a_ini</td><td><code>afterglow_glue_initial_conditions()</code></td><td>sets y[rho_X], y[Sigma]</td></tr>
+  <tr><td>Every background_functions() call</td><td><code>afterglow_glue_pressure()</code></td><td>returns p_X for ρ_tot, p_tot</td></tr>
+  <tr><td>Every ODE step (ndf15/rkck)</td><td><code>afterglow_glue_derivs()</code></td><td><strong>returns dρ_X/dN and dΣ/dN</strong></td></tr>
+</table>
+</div>
+
+<div class="panel" id="p4">
+<h2>Test your understanding</h2>
+<div id="quizBox"></div>
+</div>
+
+<script>
+function showTab(i) {
+  document.querySelectorAll('.tab').forEach((t,k) => t.classList.toggle('active', k===i));
+  document.querySelectorAll('.panel').forEach((p,k) => p.classList.toggle('active', k===i));
+}
+
+const infoMap = {
+  rho_X:   "<strong>ρ_X — integrated state.</strong> CLASS owns it in pvecback_B[index_bi_rho_X]. We set it once at IC, then CLASS advances it by integrating our derivative. It enters ρ_tot in the Friedmann equation. Importance: HIGH (it's what Friedmann needs).",
+  Sigma:   "<strong>Σ — integrated state.</strong> The memory variable from the paper. Same treatment as ρ_X at the glue interface: set at IC, integrated by CLASS. Does NOT enter Friedmann — only used internally.",
+  drho_X:  "<strong>dρ_X/dloga — THE connection.</strong> Computed from Eq. 43: dρ_X/dN = -(1/c_D)[1 - β·Ψ(r)]·ρ_X. Returned by afterglow_glue_derivs() on every step. This is the single scalar that encodes all the physics CLASS needs to advance ρ_X.",
+  dSigma:  "<strong>dΣ/dloga</strong> — from Eq. 38. Same structure as dρ_X/dloga, returned by the same function call. Because Σ isn't in Friedmann, bugs here are silent in H(a) but will show up in the memory evolution.",
+  w_X:     "<strong>w_X = -1 + 1/(3c_D)</strong> — a pure algebraic prefactor. Tells CLASS how p_X relates to ρ_X. For c_D ≥ 1/3, w_X ≥ -1 (never crosses phantom divide at classical level — a falsifiable prediction).",
+  p_X:     "<strong>p_X = w_X · ρ_X</strong> — one-line function, returned by afterglow_glue_pressure(). Feeds p_tot in Friedmann. Not dynamical.",
+  r:       "<strong>r = ρ_c / ρ_X</strong> — the argument of Ψ. Computed inside afterglow_glue_derivs() from pvecback[index_bg_rho_cdm] and y[index_bi_rho_X]. Purely internal.",
+  Psi:     "<strong>Ψ(r) = 4r(r-1)/(1+r)³</strong> — the coupling kernel. Peaks at |Ψ|_max = 2√3/9 ≈ 0.3849 at r = 2±√3. Pure function, no state, lives entirely inside the derivative call.",
+  Q:       "<strong>Q — exchange current.</strong> Mathematically Q = β·(1/c_D)·Ψ(r)·ρ_X, equivalent to the β-dependent part of dρ_X/dloga. In Phase 1b, CLASS never sees Q separately. In Phase 1b.2, Q will be added to dy[index_bi_rho_cdm] to implement CDM back-reaction (Eq. 44).",
+  beta:    "<strong>β — coupling strength.</strong> Input parameter (param file: beta_aft). Internal to derivatives. β=0 → LCDM limit (bit-identical regression test).",
+  cD:      "<strong>c_D — SU(2)_D confinement parameter.</strong> Input parameter (param file: c_D). Sets w_X and the decay rate 1/c_D in Eqs. 38/43. ρ_X ∝ a^(-1/c_D) in the β=0 free-run limit.",
+  rho_c:   "<strong>ρ_c — CLASS's native CDM density.</strong> We READ it via pvecback[index_bg_rho_cdm] to compute r. In Phase 1b we don't write ρ_c (back-reaction deferred to Phase 1b.2).",
+  rho_tot: "<strong>ρ_tot — total energy density in Friedmann.</strong> CLASS assembles it from all fluids. Our contribution: rho_tot += pvecback[index_bg_rho_X]. This is the one line where ρ_X enters H(a)."
+};
+
+function showInfo(k) {
+  document.querySelectorAll('.box').forEach(b => b.classList.remove('selected'));
+  event.target.classList.add('selected');
+  document.getElementById('infoBox').innerHTML = infoMap[k];
+}
+
+const steps = [
+  {diag:`CLASS state vector (pvecback_B):
+  y[rho_X] = 0.70 · H0²     ← IC set via afterglow_glue_initial_conditions()
+  y[Sigma] = 0.233 · H0²    ← IC set via afterglow_glue_initial_conditions()
+
+CLASS calls background_derivs(log a, y, dy) ...`,
+   info:"Step 1 — CLASS's ODE stepper (ndf15) needs to know dy/d(log a) at the current y. It calls background_derivs()."},
+
+  {diag:`background_derivs() reads ρ_c from CLASS's state:
+  pvecback[index_bg_rho_cdm] = 0.30 · H0² · a^(-3)
+
+Then calls our glue:
+  afterglow_glue_derivs(&ag, rho_c, y[rho_X], y[Sigma], &dX, &dS)`,
+   info:"Step 2 — CLASS reads its native CDM density (we don't own this) and passes it into our glue together with our two state variables."},
+
+  {diag:`Inside afterglow_glue_derivs():
+
+  r   = rho_c / rho_X                       // Eq. 32
+  Psi = 4·r·(r-1) / (1+r)³                  // Eq. 35
+  dX  = -(1/c_D) · (1 - β·Psi) · rho_X       // Eq. 43
+  dS  = -(1/c_D) · (1 - β·Psi) · Sigma       // Eq. 38
+
+  return {dX, dS}`,
+   info:"Step 3 — ALL the physics: r, Ψ, the ODE. None of this touches CLASS. Pure arithmetic, returns two scalars."},
+
+  {diag:`Back in background_derivs():
+  dy[index_bi_rho_X] = dX
+  dy[index_bi_Sigma] = dS
+
+Also computes pressure for Friedmann:
+  afterglow_glue_pressure(&ag, y[rho_X], &p_X)
+  p_X = (-1 + 1/(3·c_D)) · rho_X            // Eq. 31
+
+  rho_tot += y[rho_X]
+  p_tot   += p_X`,
+   info:"Step 4 — CLASS writes the derivatives into its output vector and accumulates ρ_tot, p_tot for Friedmann. The integrator now has everything it needs."},
+
+  {diag:`CLASS ndf15 advances the state:
+  y[rho_X] ← y[rho_X] + dX · Δ(log a)
+  y[Sigma] ← y[Sigma] + dS · Δ(log a)
+
+Next step begins. Loop forever until a = 1.
+
+The ONLY thing our module contributed to this step:
+  → afterglow_glue_derivs() returned {dX, dS}
+  → afterglow_glue_pressure() returned p_X
+
+Total bytes of info crossing the interface: ≈ 24.`,
+   info:"Step 5 — That's it. The integrator advances, and the whole cycle repeats thousands of times from a_ini to a=1. THE connection is dρ_X/dloga. Everything else is plumbing."}
+];
+let stepIdx = 0;
+function stepForward() {
+  if (stepIdx >= steps.length) return;
+  document.getElementById('stepDiag').textContent = steps[stepIdx].diag;
+  document.getElementById('stepInfo').innerHTML = steps[stepIdx].info;
+  stepIdx++;
+}
+function resetSteps() {
+  stepIdx = 0;
+  document.getElementById('stepDiag').textContent = `CLASS state vector (pvecback_B):
+  y[rho_X] = 0.70 · H0²     ← set at IC
+  y[Sigma] = 0.233 · H0²    ← set at IC
+
+CLASS is about to take a step from log(a) = -7 forward...
+
+Press "Next Step" to begin.`;
+  document.getElementById('stepInfo').innerHTML = "Each press shows one operation in the chain that connects your afterglow code to CLASS's integrator.";
+}
+
+const quiz = [
+  {q:"Why is dρ_X/dloga more important than ρ_X at the CLASS interface?",
+   opts:["Because ρ_X is zero",
+         "Because CLASS is an ODE integrator — it owns the state and needs derivatives to advance it",
+         "Because ρ_X enters perturbations",
+         "Because Ψ(r) depends on it"],
+   a:1, why:"CLASS integrates. It already has ρ_X in its state vector. What it cannot compute on its own is dρ_X/dloga — only the afterglow module knows the physics (Eq. 43)."},
+
+  {q:"In Phase 1b, does Q (exchange current) appear at the CLASS interface?",
+   opts:["Yes, it's a separate return value",
+         "No — Q is internal to afterglow_glue_derivs(); it surfaces only in Phase 1b.2 when it modifies dρ_c",
+         "Yes, it's added to ρ_tot",
+         "No, Q is not in the model"],
+   a:1, why:"Q is mathematically embedded in the β·Ψ term of dρ_X/dloga. It only becomes a first-class CLASS connection in Phase 1b.2 when CDM back-reaction (Eq. 44) requires adding it to dy[index_bi_rho_cdm]."},
+
+  {q:"Why was the IC bug (missing pow(H0,2)) silent in β=0 regression?",
+   opts:["It wasn't silent",
+         "Because CLASS normalizes densities as ρ = Ω·H0², and the glue returned Ω-units without the H0² factor — an amplitude mismatch that crashes thermodynamics, not a regression fail",
+         "Because the Σ equation absorbed the error",
+         "Because Ψ(1)=0"],
+   a:1, why:"CLASS's unit convention is ρ = Ω·H0². The glue initial_conditions function returned values in Ω-units; without the pow(H0,2) multiplier, ρ_X was ~10⁴⁴ too small, which breaks Friedmann early and crashes thermodynamics at age ≈ 0.025 Gyr. Not silent at all — it's loud once you see the age."},
+
+  {q:"What does 'dot' (Σ̇, ρ̇_X) mean vs. what the glue function returns?",
+   opts:["Dot = d/dloga, same thing",
+         "Dot = d/dt by convention; glue returns d/d(log a); related by d/dt = H · d/dlog a",
+         "Both mean d/dτ (conformal time)",
+         "Dot is shorthand for β"],
+   a:1, why:"Overdot traditionally means d/dt. CLASS steps in log(a) = N, so the glue returns d/dN. They differ by a factor of H (the Hubble rate)."},
+
+  {q:"If you had to change exactly ONE function to break the entire afterglow ↔ CLASS coupling, which one?",
+   opts:["afterglow_glue_initial_conditions()",
+         "afterglow_glue_pressure()",
+         "afterglow_glue_derivs()",
+         "background_derivs() in CLASS core"],
+   a:2, why:"The derivs function is called every step of every cosmology. A sign flip or a missing β·Ψ term propagates into every ρ_X value at every a. The other two are one-shot (IC) or algebraic (pressure)."}
+];
+
+function renderQuiz() {
+  const box = document.getElementById('quizBox');
+  box.innerHTML = quiz.map((q,i) => `
+    <div class="quiz">
+      <p><strong>Q${i+1}.</strong> ${q.q}</p>
+      ${q.opts.map((o,j) => `<button onclick="answer(${i},${j})">${String.fromCharCode(65+j)}. ${o}</button>`).join('')}
+      <div id="why${i}" style="margin-top:8px; color:#8b949e;"></div>
+    </div>`).join('');
+}
+function answer(qi, oi) {
+  const btns = document.querySelectorAll(`.quiz:nth-child(${qi+1}) button`);
+  btns.forEach((b,k) => {
+    b.classList.remove('correct','wrong');
+    if (k === quiz[qi].a) b.classList.add('correct');
+    if (k === oi && oi !== quiz[qi].a) b.classList.add('wrong');
+  });
+  document.getElementById('why'+qi).innerHTML = (oi===quiz[qi].a ? "✓ " : "✗ ") + quiz[qi].why;
+}
+renderQuiz();
+</script>
+
+</body>
+</html>

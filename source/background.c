@@ -436,7 +436,12 @@ int background_functions(
 
   /* cdm */
   if (pba->has_cdm == _TRUE_) {
-    pvecback[pba->index_bg_rho_cdm] = pba->Omega0_cdm * pow(pba->H0,2) / pow(a,3);
+    if (pba->has_afterglow == _TRUE_ && pba->ag.beta_aft != 0.) {
+      /* CDM promoted to ODE for back-reaction (Eq. 44) */
+      pvecback[pba->index_bg_rho_cdm] = pvecback_B[pba->index_bi_rho_cdm_aft];
+    } else {
+      pvecback[pba->index_bg_rho_cdm] = pba->Omega0_cdm * pow(pba->H0,2) / pow(a,3);
+    }
     rho_tot += pvecback[pba->index_bg_rho_cdm];
     p_tot += 0.;
     rho_m += pvecback[pba->index_bg_rho_cdm];
@@ -553,6 +558,19 @@ int background_functions(
     rho_tot += pvecback[pba->index_bg_rho_fld];
     p_tot += w_fld * pvecback[pba->index_bg_rho_fld];
     dp_dloga += (a*dw_over_da-3*(1+w_fld)*w_fld)*pvecback[pba->index_bg_rho_fld];
+  }
+
+  /* afterglow dark energy (Martin & Koh 2026) */
+  if (pba->has_afterglow == _TRUE_) {
+    pvecback[pba->index_bg_rho_X] = pvecback_B[pba->index_bi_rho_X];
+    pvecback[pba->index_bg_Sigma] = pvecback_B[pba->index_bi_Sigma];
+    double p_X;
+    afterglow_glue_pressure(&(pba->ag),
+                            pvecback[pba->index_bg_rho_X],
+                            &p_X);
+    pvecback[pba->index_bg_p_X] = p_X;
+    rho_tot += pvecback[pba->index_bg_rho_X];
+    p_tot   += p_X;
   }
 
   /* relativistic neutrinos (and all relativistic relics) */
@@ -1080,6 +1098,11 @@ int background_indices(
   class_define_index(pba->index_bg_rho_fld,pba->has_fld,index_bg,1);
   class_define_index(pba->index_bg_w_fld,pba->has_fld,index_bg,1);
 
+  /* - index for afterglow dark energy (Martin & Koh 2026) */
+  class_define_index(pba->index_bg_rho_X, pba->has_afterglow,index_bg,1);
+  class_define_index(pba->index_bg_p_X,   pba->has_afterglow,index_bg,1);
+  class_define_index(pba->index_bg_Sigma, pba->has_afterglow,index_bg,1);
+
   /* - index for ultra-relativistic neutrinos/species */
   class_define_index(pba->index_bg_rho_ur,pba->has_ur,index_bg,1);
 
@@ -1164,6 +1187,11 @@ int background_indices(
 
   /* -> energy density in fluid */
   class_define_index(pba->index_bi_rho_fld,pba->has_fld,index_bi,1);
+
+  /* -> afterglow dark energy (Martin & Koh 2026) */
+  class_define_index(pba->index_bi_rho_X, pba->has_afterglow,index_bi,1);
+  class_define_index(pba->index_bi_Sigma, pba->has_afterglow,index_bi,1);
+  class_define_index(pba->index_bi_rho_cdm_aft, pba->has_afterglow && pba->has_cdm,index_bi,1);
 
   /* -> scalar field and its derivative wrt conformal time (Zuma) */
   class_define_index(pba->index_bi_phi_scf,pba->has_scf,index_bi,1);
@@ -2256,6 +2284,22 @@ int background_initial_conditions(
 
   }
 
+  /* afterglow dark energy IC (Martin & Koh 2026), Eq. 55 + Eq. 30 */
+  if (pba->has_afterglow == _TRUE_) {
+    double rX_ini, S_ini;
+    afterglow_glue_initial_conditions(&(pba->ag),
+                                      pba->Omega0_X,
+                                      a,                    /* a_ini */
+                                      &rX_ini, &S_ini);
+    /* convert Omega-units to CLASS density units: rho = Omega * H0^2 */
+    pvecback_integration[pba->index_bi_rho_X] = rX_ini * pow(pba->H0,2);
+    pvecback_integration[pba->index_bi_Sigma] = S_ini  * pow(pba->H0,2);
+    /* CDM promoted to ODE for back-reaction (Eq. 44) */
+    if (pba->has_cdm == _TRUE_) {
+      pvecback_integration[pba->index_bi_rho_cdm_aft] = pba->Omega0_cdm * pow(pba->H0,2) / pow(a,3);
+    }
+  }
+
   /** - Fix initial value of \f$ \phi, \phi' \f$
    * set directly in the radiation attractor => fixes the units in terms of rho_ur
    *
@@ -2658,6 +2702,31 @@ int background_derivs(
   if (pba->has_fld == _TRUE_) {
     /** - Compute fld density \f$ d\rho/dloga = -3 (1+w_{fld}(a)) \rho \f$ */
     dy[pba->index_bi_rho_fld] = -3.*(1.+pvecback[pba->index_bg_w_fld])*y[pba->index_bi_rho_fld];
+  }
+
+  /* afterglow dark energy (Martin & Koh 2026), Eqs. 38 + 43 + 44 */
+  if (pba->has_afterglow == _TRUE_) {
+    double dX, dS;
+    afterglow_glue_derivs(&(pba->ag),
+                          pvecback[pba->index_bg_rho_cdm],  /* rho_c */
+                          y[pba->index_bi_rho_X],
+                          y[pba->index_bi_Sigma],
+                          &dX, &dS);
+    dy[pba->index_bi_rho_X] = dX;   /* Eq. 43 */
+    dy[pba->index_bi_Sigma] = dS;   /* Eq. 38 */
+
+    /* CDM base ODE: d rho_c / dloga = -3 rho_c */
+    if (pba->has_cdm == _TRUE_) {
+      dy[pba->index_bi_rho_cdm_aft] = -3. * y[pba->index_bi_rho_cdm_aft];
+
+      /* Phase 1b.2: CDM back-reaction (Eq. 44) */
+      double cdm_source;
+      afterglow_glue_cdm_source(&(pba->ag),
+                                pvecback[pba->index_bg_rho_cdm],
+                                y[pba->index_bi_rho_X],
+                                &cdm_source);
+      dy[pba->index_bi_rho_cdm_aft] += cdm_source;  /* Eq. 44 */
+    }
   }
 
   if (pba->has_scf == _TRUE_) {

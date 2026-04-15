@@ -20,7 +20,19 @@ PDF). See also:
 - [`PLAN_AFTERGLOW.md`](PLAN_AFTERGLOW.md) — equation-to-code map and phased rollout
 - [`ATTRIBUTION.md`](ATTRIBUTION.md) — upstream CLASS acknowledgements and license
 - [`afterglow.ini`](afterglow.ini) — sample input file (LCDM-compatible by default)
-- [`test/test_afterglow_bg.py`](test/test_afterglow_bg.py) — Phase 1a unit tests (19 passing)
+- [`test/test_afterglow_bg.py`](test/test_afterglow_bg.py) — Phase 1a+1b unit tests (24 passing)
+- [`PHASE1B_PATCHES.md`](PHASE1B_PATCHES.md) — 6 surgical patches for `background.c` / `input.c`
+- [`.claude/SESSION_STATE.md`](.claude/SESSION_STATE.md) — crash-recovery handoff for continued sessions
+
+**Interactive learning artifacts (open in any browser):**
+- [`afterglow_simple.html`](afterglow_simple.html) — start here. Four quantities explained plainly: ρ_X, p_X, w, a. Slide c_D and N, watch ρ_X(a) = 0.70·a^(−1/c_D) evolve.
+- [`afterglow_interactive_learn.html`](afterglow_interactive_learn.html) — deeper: Ψ(r) kernel, w_X(c_D), ρ evolution, Q exchange — Play / Learn / Quiz tabs.
+- [`afterglow_class_connection.html`](afterglow_class_connection.html) — why `dρ_X/dloga` is THE connection to CLASS. Click-a-quantity + 5-step walk-through of one ndf15 integration step.
+
+**Physics notation notes (carried over from 2026-04-14 Q&A):**
+- Overdot `˙` = `d/dt` by convention. The glue function `afterglow_glue_derivs()` returns `d/d(log a) = d/dN` (no H factor on the RHS). Related by `d/dt = H · d/dN`. CLASS steps in log(a), so the d/dN form is what the integrator consumes.
+- `c_D` — canonical benchmark **1**, data-preferred **[0.6, 2.0]**, hard floor **> 1/3** (else w_X < −1 = phantom, forbidden). Three views: confinement parameter / EOS dial (`w_X = −1 + 1/(3c_D)`) / dilution rate (`ρ_X ∝ a^(−1/c_D)`).
+- `Ω_X` sets the **amount** of dark energy (≈ 0.70 today). `c_D` sets the **character** (stiffness → EOS). Two independent knobs.
 
 Key paper equations implemented (all VERIFIED):
 

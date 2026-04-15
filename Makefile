@@ -9,7 +9,7 @@ WRKDIR = $(MDIR)/build
 	if ! [ -e $(WRKDIR) ]; then mkdir $(WRKDIR) ; mkdir $(WRKDIR)/lib; fi;
 	touch build/.base
 
-vpath %.c source:tools:main:test
+vpath %.c source:source/afterglow:tools:main:test
 vpath %.o build
 vpath %.opp build
 vpath .base build
@@ -66,7 +66,8 @@ CCFLAG += -D__CLASSDIR__='"$(CLASSDIR)"'
 
 # where to find include files *.h
 INCLUDES = -I../include
-HEADERFILES = $(wildcard ./include/*.h)
+HEADERFILES = $(wildcard ./include/*.h) $(wildcard ./include/afterglow/*.h)
+INCLUDES += -I../include/afterglow
 
 # automatically add external programs if needed. First, initialize to blank.
 EXTERNAL =
@@ -106,12 +107,18 @@ HEADERFILES += $(wildcard ./$(HMCODE)/*.h)
 %.o:  %.c .base $(HEADERFILES)
 	cd $(WRKDIR);$(CC) $(OPTFLAG) $(OMPFLAG) $(CCFLAG) $(INCLUDES) -c ../$< -o $*.o
 
+afterglow.o: source/afterglow/afterglow.c .base $(HEADERFILES)
+	cd $(WRKDIR);$(CC) $(OPTFLAG) $(OMPFLAG) $(CCFLAG) $(INCLUDES) -c ../source/afterglow/afterglow.c -o afterglow.o
+
+afterglow_class_glue.o: source/afterglow/afterglow_class_glue.c .base $(HEADERFILES)
+	cd $(WRKDIR);$(CC) $(OPTFLAG) $(OMPFLAG) $(CCFLAG) $(INCLUDES) -c ../source/afterglow/afterglow_class_glue.c -o afterglow_class_glue.o
+
 %.opp:  %.c .base $(HEADERFILES)
 	cd $(WRKDIR);$(CPP) $(OPTFLAG) $(OMPFLAG) $(CCFLAG) $(INCLUDES) -c ../$< -o $*.opp
 
 TOOLS = growTable.o dei_rkck.o sparse.o evolver_rkck.o  evolver_ndf15.o arrays.opp parser.o quadrature.o hyperspherical.opp common.o trigonometric_integrals.o
 
-SOURCE = input.o background.o thermodynamics.o perturbations.opp primordial.opp fourier.o transfer.opp harmonic.opp lensing.opp distortions.o
+SOURCE = input.o background.o thermodynamics.o perturbations.opp primordial.opp fourier.o transfer.opp harmonic.opp lensing.opp distortions.o afterglow.o afterglow_class_glue.o
 
 INPUT = input.o
 

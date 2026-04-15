@@ -1,0 +1,94 @@
+# ==============================================================
+# Cobaya Stage 1 — background-only MCMC
+# CLASS_SYMT afterglow dark energy (Martin & Koh 2026)
+#
+# Datasets:   Pantheon+SH0ES · DESI DR2 BAO · Planck 2018 compressed
+# Sampler:    Metropolis-Hastings, 8 chains, Gelman-Rubin R-1 < 0.02
+# Expected:   ~2-4 days on 16-core node, ~150k samples per chain
+# ==============================================================
+
+theory:
+  afterglow_theory.AfterglowTheory:        # our custom wrapper (see afterglow_theory.py)
+    python_path: ./
+    extra_args:
+      # --- base cosmology ---
+      output: "mPk,tCl"
+      l_max_scalars: 2500
+      non_linear: "halofit"
+      # --- afterglow switches ---
+      afterglow_on: "yes"
+      # --- numerical tolerance ---
+      tol_background_integration: 1e-5
+      tol_perturbations_integration: 1e-5
+
+likelihood:
+  # Pantheon+SH0ES (1701 SNe Ia, z = 0.01-2.3)
+  sn.pantheonplus:
+    path: ./data/Pantheon+
+
+  # DESI DR2 BAO (12 points, z = 0.295-2.33)
+  bao.desi_dr2:
+    path: ./data/DESI_DR2
+
+  # Planck 2018 compressed (R, l_A, omega_b) — shift parameters
+  cmb.planck_2018_compressed:
+    path: ./data/Planck2018_compressed
+
+params:
+  # ================= base cosmology =================
+  H0:
+    prior: {min: 55.0, max: 85.0}
+    ref:   {dist: norm, loc: 67.4, scale: 1.0}
+    proposal: 0.5
+    latex: H_0
+
+  omega_b:
+    prior: {min: 0.019, max: 0.025}
+    ref:   {dist: norm, loc: 0.02237, scale: 0.0002}
+    proposal: 0.0001
+    latex: \Omega_\mathrm{b} h^2
+
+  omega_cdm:
+    prior: {min: 0.10, max: 0.15}
+    ref:   {dist: norm, loc: 0.1200, scale: 0.001}
+    proposal: 0.0005
+    latex: \Omega_\mathrm{cdm} h^2
+
+  # ================= afterglow sector =================
+  c_D:
+    prior: {min: 0.3, max: 5.0}
+    ref:   {dist: norm, loc: 1.3, scale: 0.2}
+    proposal: 0.1
+    latex: c_D
+
+  beta_aft:
+    prior: {min: 0.0, max: 3.0}
+    ref:   {dist: norm, loc: 0.5, scale: 0.3}
+    proposal: 0.2
+    latex: \beta
+
+  # Omega0_X is derived from closure (1 - sum of others)
+  Omega_X:
+    derived: True
+    latex: \Omega_X
+
+  # Derived: intrinsic EoS
+  w_X:
+    derived: True
+    latex: w_X
+
+sampler:
+  mcmc:
+    Rminus1_stop: 0.02                 # Gelman-Rubin convergence
+    Rminus1_cl_stop: 0.1
+    max_samples: 300000
+    learn_proposal: True
+    learn_proposal_Rminus1_max: 2.0
+    covmat: auto
+    output_every: 60s                  # checkpoint every minute
+
+output: chains/stage1/afterglow_bg
+resume: True
+force: False
+debug: False
+packages_path: ./cobaya_packages

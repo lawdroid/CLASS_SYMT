@@ -9,6 +9,8 @@
 #include "arrays.h"
 #include "dei_rkck.h"
 #include "parser.h"
+#include "afterglow/afterglow.h"
+#include "afterglow/afterglow_class_glue.h"
 
 /** list of possible parametrisations of the DE equation of state */
 
@@ -111,6 +113,12 @@ struct background
   double wa_fld;   /**< \f$ wa_{DE} \f$: fluid equation of state parameter derivative */
   double cs2_fld;  /**< \f$ c^2_{s~DE} \f$: sound speed of the fluid in the frame comoving with the fluid (so, this is
                       not [delta p/delta rho] in the synchronous or newtonian gauge!) */
+
+  /* --- Afterglow dark energy (Martin & Koh 2026) --- */
+  short has_afterglow;           /**< flag: enable hidden-YM afterglow module */
+  double Omega0_X;               /**< afterglow fluid density today           */
+  struct afterglow_params ag;    /**< {c_D, beta_aft, Sigma_today, ...}       */
+
   double Omega_EDE;        /**< \f$ wa_{DE} \f$: Early Dark Energy density parameter */
   double * scf_parameters; /**< list of parameters describing the scalar field potential */
   short attractor_ic_scf;  /**< whether the scalar field has attractor initial conditions */
@@ -168,6 +176,9 @@ struct background
   int index_bg_rho_lambda;    /**< cosmological constant density */
   int index_bg_rho_fld;       /**< fluid density */
   int index_bg_w_fld;         /**< fluid equation of state */
+  int index_bg_rho_X;         /**< afterglow fluid density          */
+  int index_bg_p_X;           /**< afterglow fluid pressure         */
+  int index_bg_Sigma;         /**< MIS memory variable              */
   int index_bg_rho_idr;       /**< density of interacting dark radiation */
   int index_bg_rho_ur;        /**< relativistic neutrinos/relics density */
   int index_bg_rho_dcdm;      /**< dcdm density */
@@ -255,6 +266,9 @@ struct background
   int index_bi_rho_dcdm;/**< {B} dcdm density */
   int index_bi_rho_dr;  /**< {B} dr density */
   int index_bi_rho_fld; /**< {B} fluid density */
+  int index_bi_rho_X;   /**< {B} afterglow rho_X              */
+  int index_bi_Sigma;   /**< {B} afterglow Sigma              */
+  int index_bi_rho_cdm_aft; /**< {B} CDM density when afterglow back-reaction is active (Eq. 44) */
   int index_bi_phi_scf;       /**< {B} scalar field value */
   int index_bi_phi_prime_scf; /**< {B} scalar field derivative wrt conformal time */
 

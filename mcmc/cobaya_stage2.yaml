@@ -1,0 +1,103 @@
+# ==============================================================
+# Cobaya Stage 2 — full perturbations MCMC
+# CLASS_SYMT afterglow dark energy (Martin & Koh 2026)
+#
+# Starts from Stage-1 covariance matrix and opens the perturbation
+# sector to constrain beta through growth signatures.
+#
+# Datasets:   Stage-1 + Planck 2018 TT/TE/EE (plik_lite) +
+#             Planck 2018 lensing + DESI RSD f sigma_8
+# Sampler:    PolyChord nested (evidence + posterior in one pass)
+# Expected:   ~7-14 days on 32-core node, ~500 live points
+# ==============================================================
+
+theory:
+  afterglow_theory.AfterglowTheory:
+    python_path: ./
+    extra_args:
+      output: "tCl,pCl,lCl,mPk"
+      l_max_scalars: 2508
+      non_linear: "halofit"
+      lensing: "yes"
+      afterglow_on: "yes"
+      # Phase 2 perturbation switches
+      afterglow_pert: "yes"
+      tol_perturbations_integration: 1e-6
+
+likelihood:
+  # ------ background anchors (Stage-1 reused) ------
+  sn.pantheonplus:
+    path: ./data/Pantheon+
+
+  bao.desi_dr2:
+    path: ./data/DESI_DR2
+
+  # ------ full CMB likelihood ------
+  planck_2018_highl_plik.TTTEEE_lite:
+    path: ./data/Planck2018
+
+  planck_2018_lowl.TT:
+    path: ./data/Planck2018
+
+  planck_2018_lowl.EE:
+    path: ./data/Planck2018
+
+  planck_2018_lensing.clik:
+    path: ./data/Planck2018
+
+  # ------ growth-sector anchor ------
+  bao.desi_dr2_fsigma8:                # DESI RSD f sigma_8
+    path: ./data/DESI_DR2
+
+params:
+  # ========== base cosmology ==========
+  H0:              {prior: {min: 55.0, max: 85.0},    ref: {dist: norm, loc: 67.4, scale: 1.0},  proposal: 0.5,   latex: H_0}
+  omega_b:         {prior: {min: 0.019, max: 0.025},  ref: {dist: norm, loc: 0.02237, scale: 0.0002}, proposal: 0.0001, latex: \Omega_\mathrm{b} h^2}
+  omega_cdm:       {prior: {min: 0.10, max: 0.15},    ref: {dist: norm, loc: 0.1200, scale: 0.001},   proposal: 0.0005, latex: \Omega_\mathrm{cdm} h^2}
+  tau_reio:        {prior: {min: 0.02, max: 0.10},    ref: {dist: norm, loc: 0.0544, scale: 0.007}, proposal: 0.003, latex: \tau_\mathrm{reio}}
+  ln10^{10}A_s:    {prior: {min: 2.5,  max: 3.5},     ref: {dist: norm, loc: 3.044,  scale: 0.015}, proposal: 0.005, latex: \ln(10^{10}A_s)}
+  n_s:             {prior: {min: 0.90, max: 1.05},    ref: {dist: norm, loc: 0.9649, scale: 0.004}, proposal: 0.002, latex: n_s}
+
+  # ========== afterglow sector ==========
+  c_D:
+    prior: {min: 0.3, max: 5.0}
+    ref:   {dist: norm, loc: 1.3, scale: 0.15}
+    proposal: 0.08
+    latex: c_D
+
+  beta_aft:
+    prior: {min: 0.0, max: 3.0}
+    ref:   {dist: norm, loc: 0.5, scale: 0.25}
+    proposal: 0.15
+    latex: \beta
+
+  # Optional Phase-2 loop sharpener (off by default; uncomment if
+  # Stage-1 posterior shows non-trivial MIS memory signal)
+  # cs2_X:
+  #   prior: {min: 0.01, max: 1.0}
+  #   ref:   {dist: norm, loc: 1.0, scale: 0.1}
+  #   proposal: 0.05
+  #   latex: c_{s,X}^2
+
+  # ========== derived ==========
+  Omega_X:    {derived: True, latex: \Omega_X}
+  w_X:        {derived: True, latex: w_X}
+  sigma8:     {derived: True, latex: \sigma_8}
+  S8:         {derived: True, latex: S_8}
+  age:        {derived: True, latex: \mathrm{Age/Gyr}}
+
+sampler:
+  polychord:
+    nlive: 500                   # 25 × (n_params = ~9)
+    num_repeats: 3                # 3d for MCMC-like within nested shell
+    precision_criterion: 0.01
+    path: ./data/polychord
+    do_clustering: True
+    # reuse Stage-1 covariance as PolyChord proposal
+    covmat: chains/stage1/afterglow_bg.covmat
+
+output: chains/stage2/afterglow_full
+resume: True
+force: False
+debug: False
+packages_path: ./cobaya_packages

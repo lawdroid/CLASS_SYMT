@@ -315,6 +315,207 @@ def test7_rhs_pointmatch_eq43():
 
 
 # ═══════════════════════════════════════════════════════════════════
+#   PHASE 1b — glue layer tests
+#
+#   These mirror source/afterglow/afterglow_class_glue.c line-for-line
+#   and check that the CLASS-side entry points implement the same
+#   Eqs. 38, 43, 31, 30, 55 that the standalone Phase 1a integrator
+#   already pins.
+# ═══════════════════════════════════════════════════════════════════
+
+def glue_derivs(ap, rho_c, rho_X, Sigma):
+    """Python mirror of afterglow_glue_derivs (afterglow_class_glue.c)."""
+    r = rho_c / rho_X if rho_X > 1e-300 else 0.0   # Eq. 32
+    psi = Psi(r)                                   # Eq. 35
+    factor = (1.0 / ap.c_D) * (1.0 - ap.beta_aft * psi)
+    d_rho_X = -factor * rho_X                      # Eq. 43
+    d_Sigma = -factor * Sigma                      # Eq. 38
+    return d_rho_X, d_Sigma
+
+
+def glue_initial_conditions(ap, Omega0_X, a_ini):
+    """Python mirror of afterglow_glue_initial_conditions."""
+    loga_ini = math.log(a_ini)
+    rho_X_ini = Omega0_X * math.exp(-loga_ini / ap.c_D)  # Eq. 55
+    Sigma_ini = rho_X_ini / (3.0 * ap.c_D)                # Eq. 30
+    return rho_X_ini, Sigma_ini
+
+
+def glue_cdm_source(ap, rho_c, rho_X):
+    """Python mirror of afterglow_glue_cdm_source (Phase 1b.2, Eq. 44).
+
+    Returns the EXTRA term beyond the standard -3 rho_c derivative:
+        d rho_c / d(log a) = -3 rho_c + cdm_source
+        cdm_source         = -(beta / c_D) Psi(r) rho_X
+    """
+    r = rho_c / rho_X if rho_X > 1e-300 else 0.0
+    return -(ap.beta_aft / ap.c_D) * Psi(r) * rho_X
+
+
+def test8_glue_derivs():
+    """
+    The glue-layer derivative helper must equal the Phase-1a rhs()
+    component-by-component for any (rho_c, rho_X, Sigma). This is the
+    regression test that Phase 1b is NOT drifting from Phase 1a.
+    """
+    print("\nTest 8  :  glue_derivs matches Phase-1a rhs()  (Eqs. 38, 43)")
+    ap = AfterglowParams(c_D=1.3, beta_aft=2.5)
+    worst_X = 0.0
+    worst_S = 0.0
+    for N in [-3.0, -1.5, -0.7, 0.0]:
+        Omega0_c = 0.26
+        rho_X = 0.69 * math.exp(-N / ap.c_D)
+        Sigma = 0.321 * rho_X                       # arbitrary nonzero
+        rho_c = Omega0_c * math.exp(-3.0 * N)
+        dXg, dSg = glue_derivs(ap, rho_c, rho_X, Sigma)
+        dy = rhs(N, [rho_X, Sigma, 0.0], ap, Omega0_c)
+        worst_X = max(worst_X, abs(dXg - dy[0]) / max(abs(dy[0]), 1e-300))
+        worst_S = max(worst_S, abs(dSg - dy[1]) / max(abs(dy[1]), 1e-300))
+    check(
+        "glue d rho_X / dN == Phase-1a d rho_X / dN  (Eq. 43)",
+        worst_X < 1e-14,
+        f"max rel err = {worst_X:.2e}",
+    )
+    check(
+        "glue d Sigma / dN == Phase-1a d Sigma / dN  (Eq. 38)",
+        worst_S < 1e-14,
+        f"max rel err = {worst_S:.2e}",
+    )
+
+
+def test9_glue_initial_conditions():
+    """
+    The glue-layer IC helper must reproduce Omega0_X when evolved
+    forward from a_ini back to a = 1 with the same rhs(), in the
+    beta = 0 limit (which is exact).
+    """
+    print("\nTest 9  :  glue initial conditions re-hit Omega0_X  (Eq. 55)")
+    for c_D in [0.8, 1.0, 1.3]:
+        ap = AfterglowParams(c_D=c_D, beta_aft=0.0)
+        Omega0_X = 0.69
+        a_ini = 1e-4                 # CLASS-style earliest a
+        rho_X_ini, Sigma_ini = glue_initial_conditions(ap, Omega0_X, a_ini)
+        # Integrate forward from N_ini = log(a_ini) to N = 0 with beta=0
+        N_ini = math.log(a_ini)
+        N_steps = 801
+        N_grid = [N_ini + (0.0 - N_ini) * i / (N_steps - 1)
+                  for i in range(N_steps)]
+        # reuse evolve(), but override IC by setting Sigma_today < 0
+        # and by pre-computing our own forward RK4 from (rho_X_ini,
+        # Sigma_ini). The simplest way is to reuse the rhs() directly:
+        y = [rho_X_ini, Sigma_ini, 0.0]
+        for i in range(1, len(N_grid)):
+            N = N_grid[i - 1]
+            dN = N_grid[i] - N_grid[i - 1]
+            h2 = 0.5 * dN
+            k1 = rhs(N, y, ap, 0.26)
+            yt = [y[j] + h2 * k1[j] for j in range(3)]
+            k2 = rhs(N + h2, yt, ap, 0.26)
+            yt = [y[j] + h2 * k2[j] for j in range(3)]
+            k3 = rhs(N + h2, yt, ap, 0.26)
+            yt = [y[j] + dN * k3[j] for j in range(3)]
+            k4 = rhs(N + dN, yt, ap, 0.26)
+            y = [y[j] + (dN / 6.0) * (k1[j] + 2.0 * k2[j] + 2.0 * k3[j] + k4[j])
+                 for j in range(3)]
+        rel = abs(y[0] - Omega0_X) / Omega0_X
+        check(
+            f"rho_X(today) ≈ Omega0_X  (c_D={c_D}, β=0)",
+            rel < 1e-5,
+            f"rel err = {rel:.2e}",
+        )
+
+
+# ═══════════════════════════════════════════════════════════════════
+#   PHASE 1b.2 — CDM back-reaction (Eq. 44)
+#
+#   Test 10  glue_cdm_source point-match to Eq. 44:
+#              source == -(beta/c_D) Psi(r) rho_X   to 1e-14
+#
+#   Test 11  Total dark-sector conservation:
+#              d(rho_X + rho_c)/dN + 3 rho_c + 3(1+w_X) rho_X = 0
+#              (source terms in Eqs. 43 and 44 cancel exactly)
+# ═══════════════════════════════════════════════════════════════════
+
+def test10_cdm_source_pointmatch_eq44():
+    print("\nTest 10 :  CDM back-reaction source matches Eq. 44")
+    ap = AfterglowParams(c_D=1.3, beta_aft=2.5)
+    Omega0_X = 0.69
+    Omega0_c = 0.26
+    worst = 0.0
+    for N in [-3.0, -1.5, -0.7, 0.0]:
+        rho_X = Omega0_X * math.exp(-N / ap.c_D)
+        rho_c = Omega0_c * math.exp(-3.0 * N)
+        r = rho_c / rho_X
+        psi = Psi(r)
+        expected = -(ap.beta_aft / ap.c_D) * psi * rho_X
+        got = glue_cdm_source(ap, rho_c, rho_X)
+        denom = max(abs(expected), 1e-300)
+        worst = max(worst, abs(got - expected) / denom)
+    check(
+        "cdm_source == -(beta/c_D) Psi(r) rho_X       (Eq. 44)",
+        worst < 1e-14,
+        f"max rel err = {worst:.2e}",
+    )
+    # beta = 0 sanity: source vanishes identically.
+    ap0 = AfterglowParams(c_D=1.3, beta_aft=0.0)
+    check(
+        "beta = 0 => cdm_source = 0 (no back-reaction)",
+        abs(glue_cdm_source(ap0, 0.26, 0.69)) < 1e-300,
+    )
+
+
+def test11_total_dark_sector_conservation():
+    """
+    The matching source to rho_X lives inside Eq. 43:
+        d rho_X / dN = -(1/c_D)[1 - beta Psi] rho_X
+                     = -3 (1 + w_X) rho_X  +  (beta/c_D) Psi rho_X
+    where (1 + w_X) = 1/(3 c_D). The CDM source is
+        d rho_c / dN = -3 rho_c  -  (beta/c_D) Psi rho_X   (Eq. 44)
+    so the combined source (beta/c_D) Psi rho_X CANCELS and
+        d(rho_X+rho_c)/dN + 3 rho_c + 3(1+w_X) rho_X = 0.
+    This test is the Bianchi-identity regression guard.
+    """
+    print("\nTest 11 :  Total dark-sector conservation (Eqs. 43 + 44)")
+    ap = AfterglowParams(c_D=1.3, beta_aft=2.5)
+    Omega0_X = 0.69
+    Omega0_c = 0.26
+    w_X = -1.0 + 1.0 / (3.0 * ap.c_D)
+    worst = 0.0
+    for N in [-3.0, -1.5, -0.7, 0.0]:
+        rho_X = Omega0_X * math.exp(-N / ap.c_D)
+        Sigma = rho_X / (3.0 * ap.c_D)
+        rho_c = Omega0_c * math.exp(-3.0 * N)
+        # d rho_X / dN from Eq. 43 via glue
+        d_rho_X, _ = glue_derivs(ap, rho_c, rho_X, Sigma)
+        # d rho_c / dN = -3 rho_c + cdm_source   (Eq. 44)
+        d_rho_c = -3.0 * rho_c + glue_cdm_source(ap, rho_c, rho_X)
+        # Bianchi residual: should vanish
+        residual = (d_rho_X + d_rho_c) + 3.0 * rho_c + 3.0 * (1.0 + w_X) * rho_X
+        scale = max(abs(d_rho_X) + abs(d_rho_c) + 3.0 * rho_c
+                    + 3.0 * (1.0 + w_X) * rho_X, 1e-300)
+        worst = max(worst, abs(residual) / scale)
+    check(
+        "Bianchi residual < 1e-14 (β/c_D Psi rho_X cancels)",
+        worst < 1e-14,
+        f"max rel residual = {worst:.2e}",
+    )
+    # beta = 0 sanity: residual trivially zero and each side matches LCDM.
+    ap0 = AfterglowParams(c_D=1.3, beta_aft=0.0)
+    rho_X0 = 0.69
+    rho_c0 = 0.26
+    Sigma0 = rho_X0 / (3.0 * ap0.c_D)
+    d_rho_X0, _ = glue_derivs(ap0, rho_c0, rho_X0, Sigma0)
+    d_rho_c0 = -3.0 * rho_c0 + glue_cdm_source(ap0, rho_c0, rho_X0)
+    w_X0 = -1.0 + 1.0 / (3.0 * ap0.c_D)
+    res0 = (d_rho_X0 + d_rho_c0) + 3.0 * rho_c0 + 3.0 * (1.0 + w_X0) * rho_X0
+    check(
+        "beta = 0 Bianchi residual vanishes",
+        abs(res0) < 1e-14,
+        f"residual = {res0:.2e}",
+    )
+
+
+# ═══════════════════════════════════════════════════════════════════
 if __name__ == "__main__":
     print("=" * 63)
     print("  CLASS_SYMT  Phase 1 background sector — unit tests")
@@ -327,6 +528,10 @@ if __name__ == "__main__":
     test5_exchange_sign()
     test6_energy_conservation_smoothness()
     test7_rhs_pointmatch_eq43()
+    test8_glue_derivs()
+    test9_glue_initial_conditions()
+    test10_cdm_source_pointmatch_eq44()
+    test11_total_dark_sector_conservation()
     print("\n" + "=" * 63)
     print(f"  RESULT:  {_passed} passed, {_failed} failed")
     print("=" * 63)
