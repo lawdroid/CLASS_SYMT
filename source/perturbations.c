@@ -26,6 +26,7 @@
 
 #include "perturbations.h"
 #include "parallel.h"
+#include "afterglow/afterglow_pert.h"
 
 
 /**
@@ -3950,6 +3951,12 @@ int perturbations_vector_init(
     class_define_index(ppv->index_pt_phi_scf,pba->has_scf,index_pt,1); /* scalar field density */
     class_define_index(ppv->index_pt_phi_prime_scf,pba->has_scf,index_pt,1); /* scalar field velocity */
 
+    /* afterglow dark-energy perturbations (Phase 2) */
+
+    class_define_index(ppv->index_pt_delta_X,pba->has_afterglow,index_pt,1);    /* afterglow density contrast */
+    class_define_index(ppv->index_pt_theta_X,pba->has_afterglow,index_pt,1);    /* afterglow velocity divergence */
+    class_define_index(ppv->index_pt_sigma_hat,pba->has_afterglow,index_pt,1);  /* afterglow MIS memory */
+
     /* perturbed recombination: the indices are defined once tca is off. */
     if ( (ppt->has_perturbed_recombination == _TRUE_) && (ppw->approx[ppw->index_ap_tca] == (int)tca_off) ){
       class_define_index(ppv->index_pt_perturbed_recombination_delta_temp,_TRUE_,index_pt,1);
@@ -4421,6 +4428,15 @@ int perturbations_vector_init(
 
         ppv->y[ppv->index_pt_phi_prime_scf] =
           ppw->pv->y[ppw->pv->index_pt_phi_prime_scf];
+      }
+
+      if (pba->has_afterglow == _TRUE_) {
+        ppv->y[ppv->index_pt_delta_X] =
+          ppw->pv->y[ppw->pv->index_pt_delta_X];
+        ppv->y[ppv->index_pt_theta_X] =
+          ppw->pv->y[ppw->pv->index_pt_theta_X];
+        ppv->y[ppv->index_pt_sigma_hat] =
+          ppw->pv->y[ppw->pv->index_pt_sigma_hat];
       }
 
       if (ppt->gauge == synchronous)
@@ -5471,6 +5487,19 @@ int perturbations_initial_conditions(struct precision * ppr,
         /* if use_ppf == _TRUE_, y[ppw->pv->index_pt_Gamma_fld] will be automatically set to zero, and this is what we want (although one could probably work out some small nonzero initial conditions: TODO) */
       }
 
+      /* afterglow perturbation ICs (adiabatic) */
+      if (pba->has_afterglow == _TRUE_) {
+        double delta_X_ini, theta_X_ini, sigma_hat_ini;
+        afterglow_pert_initial_conditions(
+          &(pba->ag),
+          ppw->pv->y[ppw->pv->index_pt_delta_g],   /* delta_gamma at IC time */
+          0.,                                         /* theta_gamma ~ 0 at leading order */
+          &delta_X_ini, &theta_X_ini, &sigma_hat_ini);
+        ppw->pv->y[ppw->pv->index_pt_delta_X]   = delta_X_ini;
+        ppw->pv->y[ppw->pv->index_pt_theta_X]   = theta_X_ini;
+        ppw->pv->y[ppw->pv->index_pt_sigma_hat] = sigma_hat_ini;
+      }
+
       if (pba->has_scf == _TRUE_) {
         /** - ---> Canonical field (solving for the perturbations):
          *  initial perturbations set to zero, they should reach the attractor soon enough.
@@ -5747,6 +5776,14 @@ int perturbations_initial_conditions(struct precision * ppr,
 
         ppw->pv->y[ppw->pv->index_pt_delta_fld] -= 3*(1.+w_fld)*a_prime_over_a*alpha;
         ppw->pv->y[ppw->pv->index_pt_theta_fld] += k*k*alpha;
+      }
+
+      /* afterglow gauge transform */
+      if (pba->has_afterglow == _TRUE_) {
+        double w_X = -1. + 1./(3. * pba->ag.c_D);
+        ppw->pv->y[ppw->pv->index_pt_delta_X]   -= 3.*(1.+w_X)*a_prime_over_a*alpha;
+        ppw->pv->y[ppw->pv->index_pt_theta_X]   += k*k*alpha;
+        ppw->pv->y[ppw->pv->index_pt_sigma_hat] -= 3.*(1.+w_X)*a_prime_over_a*alpha;
       }
 
       /* scalar field: check */
@@ -7173,6 +7210,27 @@ int perturbations_total_stress_energy(
     }
 
     /* add your extra species here */
+
+    /* afterglow dark-energy perturbation contribution (Phase 2) */
+    if (pba->has_afterglow == _TRUE_) {
+      double w_X = -1. + 1./(3. * pba->ag.c_D);
+      double rho_X_bg = ppw->pvecback[pba->index_bg_rho_X];
+
+      ppw->delta_rho_X = rho_X_bg * y[ppw->pv->index_pt_delta_X];
+
+      ppw->rho_plus_p_theta_X = (1.+w_X) * rho_X_bg * y[ppw->pv->index_pt_theta_X];
+
+      afterglow_pert_pressure(&(pba->ag), rho_X_bg,
+                              y[ppw->pv->index_pt_delta_X],
+                              y[ppw->pv->index_pt_sigma_hat],
+                              &(ppw->delta_p_X));
+
+      ppw->delta_rho += ppw->delta_rho_X;
+      ppw->rho_plus_p_theta += ppw->rho_plus_p_theta_X;
+      ppw->delta_p += ppw->delta_p_X;
+
+      ppw->rho_plus_p_tot += (1.+w_X) * rho_X_bg;
+    }
 
     /* fluid contribution */
     if (pba->has_fld == _TRUE_) {
@@ -9388,6 +9446,30 @@ int perturbations_derivs(double tau,
         dy[pv->index_pt_Gamma_fld] = ppw->Gamma_prime_fld; /* Gamma variable of PPF formalism */
       }
 
+    }
+
+    /** - ---> afterglow dark-energy perturbations (Phase 2) */
+
+    if (pba->has_afterglow == _TRUE_) {
+
+      double d_delta_X, d_theta_X, d_sigma_hat;
+
+      afterglow_pert_rhs(
+        &(pba->ag),
+        a_prime_over_a,                                     /* H_conf = aH */
+        k,                                                  /* comoving wavenumber */
+        pvecback[pba->index_bg_rho_cdm],                   /* rho_c background */
+        pvecback[pba->index_bg_rho_X],                     /* rho_X background */
+        y[pv->index_pt_delta_cdm],                         /* CDM density contrast */
+        y[pv->index_pt_delta_X],                           /* afterglow delta_X */
+        y[pv->index_pt_theta_X],                           /* afterglow theta_X */
+        y[pv->index_pt_sigma_hat],                         /* afterglow sigma_hat */
+        2.*metric_continuity,                               /* h' = 2*metric_continuity in synchronous gauge */
+        &d_delta_X, &d_theta_X, &d_sigma_hat);
+
+      dy[pv->index_pt_delta_X]   = d_delta_X;
+      dy[pv->index_pt_theta_X]   = d_theta_X;
+      dy[pv->index_pt_sigma_hat] = d_sigma_hat;
     }
 
     /** - ---> scalar field (scf) */

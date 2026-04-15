@@ -55,6 +55,10 @@
 
 #include "afterglow/afterglow.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Forward decls so we avoid pulling CLASS headers into this file. */
 struct afterglow_params;
 
@@ -123,7 +127,8 @@ int afterglow_pert_rhs(struct afterglow_params * ap,
  *  CLASS fld module is unsuitable.
  */
 int afterglow_pert_pressure(struct afterglow_params * ap,
-                            double rho_X_bg, double sigma_hat,
+                            double rho_X_bg, double delta_X,
+                            double sigma_hat,
                             double * delta_p_X);
 
 /**
@@ -156,5 +161,9 @@ int afterglow_pert_initial_conditions(struct afterglow_params * ap,
                                       double * delta_X_ini,
                                       double * theta_X_ini,
                                       double * sigma_hat_ini);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __AFTERGLOW_PERT__ */

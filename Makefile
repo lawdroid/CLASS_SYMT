@@ -113,12 +113,15 @@ afterglow.o: source/afterglow/afterglow.c .base $(HEADERFILES)
 afterglow_class_glue.o: source/afterglow/afterglow_class_glue.c .base $(HEADERFILES)
 	cd $(WRKDIR);$(CC) $(OPTFLAG) $(OMPFLAG) $(CCFLAG) $(INCLUDES) -c ../source/afterglow/afterglow_class_glue.c -o afterglow_class_glue.o
 
+afterglow_pert.o: source/afterglow/afterglow_pert.c .base $(HEADERFILES)
+	cd $(WRKDIR);$(CC) $(OPTFLAG) $(OMPFLAG) $(CCFLAG) $(INCLUDES) -c ../source/afterglow/afterglow_pert.c -o afterglow_pert.o
+
 %.opp:  %.c .base $(HEADERFILES)
 	cd $(WRKDIR);$(CPP) $(OPTFLAG) $(OMPFLAG) $(CCFLAG) $(INCLUDES) -c ../$< -o $*.opp
 
 TOOLS = growTable.o dei_rkck.o sparse.o evolver_rkck.o  evolver_ndf15.o arrays.opp parser.o quadrature.o hyperspherical.opp common.o trigonometric_integrals.o
 
-SOURCE = input.o background.o thermodynamics.o perturbations.opp primordial.opp fourier.o transfer.opp harmonic.opp lensing.opp distortions.o afterglow.o afterglow_class_glue.o
+SOURCE = input.o background.o thermodynamics.o perturbations.opp primordial.opp fourier.o transfer.opp harmonic.opp lensing.opp distortions.o afterglow.o afterglow_class_glue.o afterglow_pert.o
 
 INPUT = input.o
 

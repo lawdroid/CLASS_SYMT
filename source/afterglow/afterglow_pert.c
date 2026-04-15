@@ -74,19 +74,30 @@ int afterglow_pert_rhs(struct afterglow_params * ap,
   double delta_r   = r_bar * (delta_c - delta_X);
   double delta_Psi = Psi_prime_bar * delta_r;
 
-  /* (P1) density-contrast equation */
+  /* Rest-frame sound speed: physical propagation speed in the hidden
+     YM sector. For w < 0 fluids, using w directly as the sound speed
+     in the pressure-gradient term leads to Jeans-type instability;
+     cs2_X (typically 1, causal) keeps perturbations well-posed.
+     Analogous to cs2_fld in CLASS's stock fluid module. */
+  double cs2 = ap->cs2_X;
+
+  /* (P1) density-contrast equation.
+     Standard fluid form with cs2 stabilization:
+       delta' = -(1+w)(theta+h'/2) - 3H(cs2-w)delta - 9(1+w)(cs2-ca2)H^2 theta/k^2
+     For constant w, ca2 = w so cs2-ca2 = cs2-w.
+     Plus MIS non-adiabatic departure: w*(sigma_hat - delta_X). */
   *d_delta_X =
       -one_plus_w * (theta_X + 0.5 * h_prime_syn)
+      - 3.0 * H_conf * (cs2 - w_X) * delta_X
+      - 9.0 * one_plus_w * (cs2 - w_X) * H_conf * H_conf * theta_X / (k * k)
       - 3.0 * H_conf * w_X * (sigma_hat - delta_X)
       + H_conf * (beta / c_D) * delta_Psi;
 
-  /* (P2) velocity-divergence equation. The sound-speed piece is
-     absorbed into the "w_X sigma_hat" term — no separate c_s^2
-     appears because the MIS bulk closure ties pressure to sigma_hat
-     directly, NOT to delta_X. */
+  /* (P2) velocity-divergence equation (Euler).
+     Pressure gradient uses cs2 (rest-frame sound speed, not w_X). */
   *d_theta_X =
-      -H_conf * (1.0 - 3.0 * w_X) * theta_X
-      + (k * k) * (w_X / one_plus_w) * sigma_hat;
+      -H_conf * (1.0 - 3.0 * cs2) * theta_X
+      + (k * k) * (cs2 / one_plus_w) * sigma_hat;
 
   /* (P3) memory equation — the Phase 2 novelty. */
   *d_sigma_hat =
@@ -107,10 +118,15 @@ int afterglow_pert_rhs(struct afterglow_params * ap,
 /*  (the adiabatic sub-manifold).                                      */
 /* ------------------------------------------------------------------ */
 int afterglow_pert_pressure(struct afterglow_params * ap,
-                            double rho_X_bg, double sigma_hat,
+                            double rho_X_bg, double delta_X,
+                            double sigma_hat,
                             double * delta_p_X) {
   double w_X = -1.0 + 1.0 / (3.0 * ap->c_D);
-  *delta_p_X = w_X * rho_X_bg * sigma_hat;
+  double cs2 = ap->cs2_X;
+  /* delta_p = cs2 * rho * delta_X + w * rho * (sigma_hat - delta_X)
+     = (cs2 - w) * rho * delta_X + w * rho * sigma_hat
+     This matches the cs2-stabilized continuity equation form. */
+  *delta_p_X = cs2 * rho_X_bg * delta_X + w_X * rho_X_bg * (sigma_hat - delta_X);
   return _SUCCESS_;
 }
 

@@ -477,6 +477,9 @@ struct perturbations_vector
   int index_pt_theta_idm; /**< idm velocity */
   int index_pt_delta_dcdm; /**< dcdm density */
   int index_pt_theta_dcdm; /**< dcdm velocity */
+  int index_pt_delta_X;    /**< afterglow density contrast delta_X = delta rho_X / rho_X_bg */
+  int index_pt_theta_X;    /**< afterglow velocity divergence */
+  int index_pt_sigma_hat;  /**< afterglow MIS memory perturbation delta Sigma / Sigma_bg */
   int index_pt_delta_fld;  /**< dark energy density in true fluid case */
   int index_pt_theta_fld;  /**< dark energy velocity in true fluid case */
   int index_pt_Gamma_fld;  /**< unique dark energy dynamical variable in PPF case */
@@ -602,6 +605,10 @@ struct perturbations_workspace
 
   double delta_cb;       /**< relative density perturbation of only cdm and baryon */
   double theta_cb;       /**< velocity divergence theta of only cdm and baryon */
+
+  double delta_rho_X;          /**< afterglow density perturbation rho_X_bg * delta_X */
+  double delta_p_X;            /**< afterglow pressure perturbation (MIS closure) */
+  double rho_plus_p_theta_X;   /**< afterglow (rho+p)*theta contribution */
 
   double delta_rho_fld;        /**< density perturbation of fluid, not so trivial in PPF scheme */
   double delta_p_fld;          /**< pressure perturbation of fluid, very non-trivial in PPF scheme */
