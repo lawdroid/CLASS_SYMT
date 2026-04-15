@@ -774,79 +774,250 @@ ada793a Phase 1b: CLASS glue layer + line-numbered patches + tests 8-9
 
 <!-- TAB 3: THE CRASH AND FIX -->
 <div id="p2panel3" class="detail-panel" style="border-radius:0 8px 8px 8px; margin-top:0;">
-  <h3>The crash: NaN explosion in the NDF15 integrator</h3>
-  <p style="margin-bottom:16px;">After wiring the equations, CLASS crashed with a segfault when computing lensed Cl spectra. Here's the detective story.</p>
+  <h3>The NaN/Inf Detective Story</h3>
+  <p style="margin-bottom:8px; color:var(--muted);">Click each step to follow the investigation from crash to fix.</p>
 
-  <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:20px;">
-    <div style="background:#0d1117; border:1px solid var(--red); border-radius:8px; padding:16px;">
-      <div style="color:var(--red); font-weight:600; margin-bottom:8px;">Symptom</div>
-      <code style="font-size:0.82em;">SIGSEGV in numjac() at evolver_ndf15.c:1355</code><br>
-      <span style="color:var(--muted); font-size:0.85em;">Crash in the numerical Jacobian computation of CLASS's implicit ODE integrator</span>
-    </div>
-    <div style="background:#0d1117; border:1px solid var(--orange); border-radius:8px; padding:16px;">
-      <div style="color:var(--orange); font-weight:600; margin-bottom:8px;">Cause</div>
-      <span style="font-size:0.85em;">Perturbation variables exploded to <code>1e+303</code> before going NaN, corrupting the Jacobian</span>
-    </div>
+  <!-- Debug timeline steps -->
+  <div id="dbg-steps" style="display:flex; gap:6px; margin-bottom:0; flex-wrap:wrap;">
+    <button onclick="showDbg(0)" class="dbg-btn active" style="padding:8px 14px; border:1px solid var(--red); border-bottom:none; border-radius:8px 8px 0 0; background:var(--card); color:var(--red); cursor:pointer; font-size:0.82em; font-weight:600;">1. The Crash</button>
+    <button onclick="showDbg(1)" class="dbg-btn" style="padding:8px 14px; border:1px solid var(--border); border-bottom:none; border-radius:8px 8px 0 0; background:var(--bg); color:var(--muted); cursor:pointer; font-size:0.82em;">2. Bisecting</button>
+    <button onclick="showDbg(2)" class="dbg-btn" style="padding:8px 14px; border:1px solid var(--border); border-bottom:none; border-radius:8px 8px 0 0; background:var(--bg); color:var(--muted); cursor:pointer; font-size:0.82em;">3. Debug Prints</button>
+    <button onclick="showDbg(3)" class="dbg-btn" style="padding:8px 14px; border:1px solid var(--border); border-bottom:none; border-radius:8px 8px 0 0; background:var(--bg); color:var(--muted); cursor:pointer; font-size:0.82em;">4. Diagnosis</button>
+    <button onclick="showDbg(4)" class="dbg-btn" style="padding:8px 14px; border:1px solid var(--border); border-bottom:none; border-radius:8px 8px 0 0; background:var(--bg); color:var(--muted); cursor:pointer; font-size:0.82em;">5. The Fix</button>
+    <button onclick="showDbg(5)" class="dbg-btn" style="padding:8px 14px; border:1px solid var(--border); border-bottom:none; border-radius:8px 8px 0 0; background:var(--bg); color:var(--muted); cursor:pointer; font-size:0.82em;">6. Verification</button>
   </div>
 
-  <h3>Root cause: Jeans instability from negative sound speed</h3>
-  <div class="diagram" style="font-size:0.85em;">
-<span style="color:var(--red);">ORIGINAL (unstable) velocity equation:</span>
+  <!-- STEP 0: The crash -->
+  <div id="dbg0" class="dbg-panel" style="display:block; border:1px solid var(--border); border-radius:0 8px 8px 8px; padding:20px; background:var(--card);">
+    <h4 style="color:var(--red); margin-bottom:12px;">Exit code 139 &mdash; Segmentation fault</h4>
+    <p>After wiring all three perturbation equations into <code>perturbations.c</code>, we ran:</p>
+    <div class="diagram" style="margin:12px 0; font-size:0.85em;">
+<span style="color:var(--muted);">$</span> ./class test_phase2_beta01.ini
 
-  theta_X' = -H*(1 - 3*<span style="color:var(--red);">w_X</span>)*theta_X + k^2*(<span style="color:var(--red);">w_X</span>/(1+w_X))*sigma_hat
-
-  With w_X = -2/3 (for c_D=1):
-
-    <span style="color:var(--red);">w_X/(1+w_X) = (-2/3)/(1/3) = -2</span>
-
-  The pressure gradient term k^2*(-2)*sigma_hat has the WRONG SIGN.
-  It acts like <span style="color:var(--red);">negative gravity</span> &mdash; instead of resisting compression,
-  pressure AMPLIFIES it. This is the Jeans instability.
-
-  <span style="color:var(--muted);">Physically: w &lt; 0 means negative pressure. Using w as the sound speed</span>
-  <span style="color:var(--muted);">means sound waves travel at imaginary speed => exponential blowup.</span>
-  </div>
-
-  <div style="margin:20px 0;">
-    <div style="display:flex; align-items:center; gap:12px; margin-bottom:12px;">
-      <span style="background:var(--red); color:white; padding:4px 10px; border-radius:12px; font-size:0.75em; font-weight:600;">BEFORE</span>
-      <code style="color:var(--red);">delta_X = -5.2e+303, theta_X = 5.9e+304, sigma_hat = -5.2e+303</code>
+<span style="color:var(--green);">Computing background... OK</span>
+<span style="color:var(--green);">Computing thermodynamics... OK</span>
+<span style="color:var(--red);">Computing perturbations... Segmentation fault (core dumped)</span>
+<span style="color:var(--red);">Exit code: 139 (SIGSEGV)</span>
     </div>
-    <div style="display:flex; align-items:center; gap:12px;">
-      <span style="background:var(--green); color:white; padding:4px 10px; border-radius:12px; font-size:0.75em; font-weight:600;">AFTER</span>
-      <code style="color:var(--green);">All perturbation runs complete cleanly. No NaN. No crash.</code>
+    <div style="background:#0d1117; border:1px solid var(--red); border-radius:8px; padding:16px; margin-top:12px;">
+      <div style="color:var(--red); font-weight:600; margin-bottom:8px;">Stack trace pointed to:</div>
+      <code style="font-size:0.82em;">evolver_ndf15.c:1355 &mdash; numjac()</code><br>
+      <code style="font-size:0.82em; color:var(--muted);">nj_ws->ydel_Fdel[nj_ws->Rowmax[j]][j]</code><br>
+      <p style="color:var(--muted); font-size:0.85em; margin-top:8px;">This is CLASS's NDF15 implicit integrator computing a numerical Jacobian. The array index <code>Rowmax[j]</code> had been corrupted by NaN values in the perturbation vector.</p>
+    </div>
+    <div class="note-box" style="margin-top:12px;">
+      <strong>Key observation:</strong> The crash was NOT in our afterglow code. It was deep inside CLASS's ODE solver. This means the <em>output</em> of our equations was the problem, not a coding bug like a null pointer.
     </div>
   </div>
 
-  <h3>The fix: rest-frame sound speed cs2_X</h3>
-  <div class="diagram" style="font-size:0.85em;">
-<span style="color:var(--green);">FIXED (stable) velocity equation:</span>
-
-  theta_X' = -H*(1 - 3*<span style="color:var(--green);">cs2_X</span>)*theta_X + k^2*(<span style="color:var(--green);">cs2_X</span>/(1+w_X))*sigma_hat
-
-  With cs2_X = 1 (speed of light, from hidden YM sector):
-
-    <span style="color:var(--green);">cs2_X/(1+w_X) = 1/(1/3) = +3</span>
-
-  Now the pressure gradient is POSITIVE &mdash; it resists compression.
-  Perturbation waves propagate at the speed of light (causal).
+  <!-- STEP 1: Bisecting -->
+  <div id="dbg1" class="dbg-panel" style="display:none; border:1px solid var(--border); border-radius:0 8px 8px 8px; padding:20px; background:var(--card);">
+    <h4 style="color:var(--orange); margin-bottom:12px;">Bisecting: which output mode triggers the crash?</h4>
+    <p style="margin-bottom:12px;">CLASS computes different things depending on what you request. We systematically narrowed down which combination crashes:</p>
+    <table>
+      <tr><th>Test</th><th>output =</th><th>lensing</th><th>Result</th></tr>
+      <tr><td>A</td><td><code>tCl</code></td><td>no</td><td><span class="hl-pass" style="font-size:0.85em;">OK</span></td></tr>
+      <tr><td>B</td><td><code>tCl,pCl</code></td><td>no</td><td><span class="hl-pass" style="font-size:0.85em;">OK</span></td></tr>
+      <tr><td>C</td><td><code>tCl,lCl</code></td><td>yes</td><td><span style="color:var(--red); font-weight:600; font-size:0.85em;">CRASH</span></td></tr>
+      <tr><td>D</td><td><code>tCl,pCl,lCl,mPk</code></td><td>yes</td><td><span style="color:var(--red); font-weight:600; font-size:0.85em;">CRASH</span></td></tr>
+    </table>
+    <div class="note-box" style="margin-top:16px;">
+      <strong>Deduction:</strong> Lensing requires CLASS to integrate perturbations at <em>many more k-modes</em> (small-scale wavenumbers). The crash only happens at high k &mdash; this points to a <strong>scale-dependent instability</strong>. Small-scale (large k) perturbations blow up while large-scale ones stay fine.
+    </div>
+    <div style="margin-top:12px; padding:12px; background:#0d1117; border-radius:8px; border:1px solid var(--border);">
+      <span style="color:var(--cyan); font-weight:600;">Why does lensing need more k-modes?</span>
+      <p style="font-size:0.88em; color:var(--muted); margin-top:4px;">Gravitational lensing of the CMB is caused by matter between us and the last scattering surface. Computing the lensing potential requires integrating structure on small scales (high k), which CLASS skips when you only ask for unlensed temperature (tCl).</p>
+    </div>
   </div>
 
-  <div class="note-box" style="margin-top:16px;">
-    <strong>This is exactly what CLASS does for its stock <code>fld</code> module:</strong> the parameter <code>cs2_fld</code> defaults to 1, not to <code>w_fld</code>. The physical rest-frame sound speed and the equation of state are independent quantities. For the hidden YM condensate, perturbations propagate at light speed even though the background EoS is <code>w = -2/3</code>.
+  <!-- STEP 2: Debug prints -->
+  <div id="dbg2" class="dbg-panel" style="display:none; border:1px solid var(--border); border-radius:0 8px 8px 8px; padding:20px; background:var(--card);">
+    <h4 style="color:var(--orange); margin-bottom:12px;">Inserting debug fprintf to catch the explosion</h4>
+    <p>We added a diagnostic print inside the RHS function to dump the perturbation values every time CLASS evaluates the derivatives:</p>
+    <div class="diagram" style="margin:12px 0; font-size:0.82em;">
+<span style="color:var(--muted);">// Added temporarily to afterglow_pert_rhs():</span>
+<span style="color:var(--cyan);">fprintf</span>(stderr, <span style="color:var(--orange);">"[AG_DBG] k=%.4e tau=%.4e dX=%.4e tX=%.4e sH=%.4e\n"</span>,
+        k, tau, delta_X, theta_X, sigma_hat);
+    </div>
+    <p style="margin:12px 0;">The output told the story immediately:</p>
+    <div class="diagram" style="margin:12px 0; font-size:0.78em; border-color:var(--red);">
+<span style="color:var(--muted);">[AG_DBG] k=1.05e-01 tau=2.80e+02 dX= 3.21e-06 tX= 1.07e-04 sH= 3.21e-06</span>  <span style="color:var(--green);">normal</span>
+<span style="color:var(--muted);">[AG_DBG] k=1.05e-01 tau=3.50e+02 dX= 4.88e-06 tX= 2.13e-04 sH= 4.88e-06</span>  <span style="color:var(--green);">normal</span>
+<span style="color:var(--muted);">... (thousands of lines, all fine for low k) ...</span>
+
+<span style="color:var(--orange);">[AG_DBG] k=2.41e+00 tau=1.20e+02 dX=-1.83e+18 tX= 4.92e+19 sH=-1.83e+18</span>  <span style="color:var(--red);">growing!</span>
+<span style="color:var(--red);">[AG_DBG] k=2.41e+00 tau=1.21e+02 dX=-7.62e+44 tX= 2.05e+46 sH=-7.62e+44</span>  <span style="color:var(--red);">exploding!</span>
+<span style="color:var(--red);">[AG_DBG] k=2.41e+00 tau=1.22e+02 dX=-5.17e+303 tX=5.94e+304 sH=-5.2e+303</span> <span style="color:var(--red);">NaN next step</span>
+    </div>
+    <div class="note-box" style="margin-top:12px;">
+      <strong>Observations:</strong><br>
+      (1) Low-k modes (k ~ 0.1/Mpc) are stable and well-behaved<br>
+      (2) High-k modes (k > 1/Mpc) explode exponentially &mdash; doubling rate proportional to k<br>
+      (3) Growth rate ~ k^2, the hallmark of a <strong>Jeans-type instability</strong><br>
+      (4) delta_X and sigma_hat track each other &mdash; theta_X leads the explosion
+    </div>
   </div>
 
-  <h3 style="margin-top:16px;">What also had to change</h3>
-  <table>
-    <tr><th>Equation</th><th>Change</th><th>Why</th></tr>
-    <tr><td>(P1) continuity</td><td>Added <code>-3H(cs2-w)*delta_X</code> and <code>-9(1+w)(cs2-w)H^2*theta/k^2</code> stabilization terms</td><td>Standard CLASS fld form, keeps density evolution well-posed</td></tr>
-    <tr><td>(P2) Euler</td><td>Replaced <code>w_X</code> with <code>cs2_X</code> in drag and pressure gradient</td><td>The core fix &mdash; positive propagation speed</td></tr>
-    <tr><td>Pressure closure</td><td>Updated to <code>delta_p = cs2*rho*delta + w*rho*(sigma-delta)</code></td><td>Consistent with the stabilized continuity equation</td></tr>
-    <tr><td>(P3) memory</td><td>Unchanged</td><td>No sound-speed term; driven by theta and the coupling</td></tr>
-  </table>
+  <!-- STEP 3: Diagnosis -->
+  <div id="dbg3" class="dbg-panel" style="display:none; border:1px solid var(--border); border-radius:0 8px 8px 8px; padding:20px; background:var(--card);">
+    <h4 style="color:var(--purple); margin-bottom:12px;">Root cause: Jeans instability from negative sound speed</h4>
+    <p style="margin-bottom:12px;">The velocity equation (P2) had the equation-of-state parameter <code>w_X</code> where the <em>sound speed</em> should go:</p>
 
-  <h3 style="margin-top:16px;">C++ linkage bug (bonus)</h3>
-  <p>CLASS compiles <code>perturbations.c</code> as <strong>C++</strong> (produces <code>.opp</code>) but afterglow files as <strong>C</strong> (produce <code>.o</code>). Without <code>extern "C"</code> guards in the header, the C++ linker couldn't find the C symbols due to name mangling. Fix: added <code>#ifdef __cplusplus extern "C" {</code> to <code>afterglow_pert.h</code>.</p>
+    <div class="diagram" style="margin:12px 0; font-size:0.85em; border-color:var(--red);">
+<span style="color:var(--red);">ORIGINAL equation (P2) &mdash; UNSTABLE:</span>
+
+  theta_X' = -H*(1 - 3*<span style="color:var(--red); font-weight:bold;">w_X</span>)*theta_X + k^2*(<span style="color:var(--red); font-weight:bold;">w_X</span>/(1+w_X))*sigma_hat
+    </div>
+
+    <p style="margin:12px 0;">For the afterglow fluid with <code>c_D = 1</code>:</p>
+
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin:16px 0;">
+      <div style="background:#0d1117; border:1px solid var(--red); border-radius:8px; padding:16px;">
+        <div style="color:var(--red); font-weight:600; font-size:0.9em; margin-bottom:8px;">The math that kills it</div>
+        <div style="font-family:monospace; font-size:0.88em; line-height:1.8;">
+          w_X = -1 + 1/(3*1) = <strong>-2/3</strong><br>
+          1 + w_X = <strong>1/3</strong><br>
+          w_X/(1+w_X) = (-2/3)/(1/3) = <span style="color:var(--red); font-weight:bold;">-2</span>
+        </div>
+      </div>
+      <div style="background:#0d1117; border:1px solid var(--orange); border-radius:8px; padding:16px;">
+        <div style="color:var(--orange); font-weight:600; font-size:0.9em; margin-bottom:8px;">What -2 means physically</div>
+        <div style="font-size:0.88em; line-height:1.8;">
+          Pressure gradient term: <code>k^2 * (-2) * sigma</code><br>
+          <strong>Wrong sign!</strong> Instead of resisting compression, pressure <em>amplifies</em> it.<br>
+          Growth rate ~ e^(k*t) &mdash; faster for higher k.
+        </div>
+      </div>
+    </div>
+
+    <div style="background:#0d1117; border:1px solid var(--purple); border-radius:8px; padding:16px; margin:16px 0;">
+      <div style="color:var(--purple); font-weight:600; margin-bottom:8px;">The physics analogy</div>
+      <p style="font-size:0.88em;">Imagine squeezing a balloon (positive sound speed: it pushes back). Now imagine a material where squeezing makes it <em>collapse harder</em> &mdash; that's negative effective sound speed. Sound waves become exponentially growing modes. This is the <strong>Jeans instability</strong>, normally associated with gravity overwhelming pressure, but here it's the equation itself producing a negative restoring force.</p>
+      <p style="font-size:0.88em; margin-top:8px; color:var(--muted);">Technically: w &lt; 0 means negative pressure (dark energy!). But the <em>propagation speed</em> of perturbations is a separate quantity. Sound speed squared must be positive for stable wave propagation. Using w as the sound speed gives cs^2 = w &lt; 0 &rArr; imaginary sound speed &rArr; exponential blowup.</p>
+    </div>
+
+    <div class="note-box">
+      <strong>Why didn't this crash at low k?</strong> The instability growth rate scales as k^2. At k ~ 0.05/Mpc (CMB scales), the e-folding time is longer than the age of the universe. At k ~ 2/Mpc (lensing scales), perturbations double every ~10^(-2) conformal-time units &mdash; hitting 10^303 in milliseconds of integration.
+    </div>
+  </div>
+
+  <!-- STEP 4: The fix -->
+  <div id="dbg4" class="dbg-panel" style="display:none; border:1px solid var(--border); border-radius:0 8px 8px 8px; padding:20px; background:var(--card);">
+    <h4 style="color:var(--green); margin-bottom:12px;">The fix: separate sound speed from equation of state</h4>
+    <p style="margin-bottom:12px;">The key insight: for non-adiabatic fluids, the equation of state <code>w</code> and the rest-frame sound speed <code>cs2</code> are <strong>independent</strong>. CLASS's own <code>fld</code> module does exactly this with <code>cs2_fld</code> (defaults to 1, not w).</p>
+
+    <div class="diagram" style="margin:12px 0; font-size:0.85em; border-color:var(--green);">
+<span style="color:var(--green);">FIXED equation (P2) &mdash; STABLE:</span>
+
+  theta_X' = -H*(1 - 3*<span style="color:var(--green); font-weight:bold;">cs2_X</span>)*theta_X + k^2*(<span style="color:var(--green); font-weight:bold;">cs2_X</span>/(1+w_X))*sigma_hat
+
+  With cs2_X = 1 (speed of light &mdash; the natural propagation speed in the hidden YM sector):
+
+    <span style="color:var(--green); font-weight:bold;">cs2_X/(1+w_X) = 1/(1/3) = +3</span>   &larr; positive! Waves propagate, don't explode.
+    </div>
+
+    <h4 style="margin-top:20px; margin-bottom:12px;">All equations that changed</h4>
+    <table>
+      <tr><th>Equation</th><th style="width:45%;">Change</th><th>Why</th></tr>
+      <tr>
+        <td style="white-space:nowrap;"><strong>(P1)</strong> continuity</td>
+        <td>Added <code>-3H(cs2-w)*delta</code> and <code>-9(1+w)(cs2-w)H^2*theta/k^2</code></td>
+        <td>Standard cs2-stabilization (same form as CLASS <code>fld</code>)</td>
+      </tr>
+      <tr>
+        <td style="white-space:nowrap;"><strong>(P2)</strong> Euler</td>
+        <td>Replaced <code>w_X</code> &rarr; <code>cs2_X</code> in drag and pressure gradient</td>
+        <td><strong>The core fix</strong> &mdash; positive propagation speed</td>
+      </tr>
+      <tr>
+        <td style="white-space:nowrap;">Pressure closure</td>
+        <td><code>delta_p = cs2*rho*delta + w*rho*(sigma-delta)</code></td>
+        <td>Consistent with stabilized continuity</td>
+      </tr>
+      <tr>
+        <td style="white-space:nowrap;"><strong>(P3)</strong> memory</td>
+        <td>Unchanged</td>
+        <td>No sound-speed term; driven by coupling</td>
+      </tr>
+    </table>
+
+    <div class="diagram" style="margin:16px 0; font-size:0.82em;">
+<span style="color:var(--muted);">// source/afterglow/afterglow_pert.c — the actual code change:</span>
+
+<span style="color:var(--red);">// BEFORE (unstable):</span>
+<span style="color:var(--red);">*d_theta_X = -H_conf * (1.0 - 3.0 * w_X) * theta_X</span>
+<span style="color:var(--red);">           + (k*k) * (w_X / one_plus_w) * sigma_hat;</span>
+
+<span style="color:var(--green);">// AFTER (stable):</span>
+<span style="color:var(--green);">double cs2 = ap->cs2_X;  // rest-frame sound speed (default 1.0)</span>
+<span style="color:var(--green);">*d_theta_X = -H_conf * (1.0 - 3.0 * cs2) * theta_X</span>
+<span style="color:var(--green);">           + (k*k) * (cs2 / one_plus_w) * sigma_hat;</span>
+    </div>
+  </div>
+
+  <!-- STEP 5: Verification -->
+  <div id="dbg5" class="dbg-panel" style="display:none; border:1px solid var(--border); border-radius:0 8px 8px 8px; padding:20px; background:var(--card);">
+    <h4 style="color:var(--green); margin-bottom:12px;">Verification: every run completes cleanly</h4>
+
+    <div style="margin:16px 0;">
+      <div style="display:flex; align-items:center; gap:12px; margin-bottom:12px;">
+        <span style="background:var(--red); color:white; padding:4px 10px; border-radius:12px; font-size:0.75em; font-weight:600;">BEFORE FIX</span>
+        <code style="color:var(--red); font-size:0.88em;">delta_X = -5.2e+303, theta_X = 5.9e+304 &rarr; NaN &rarr; SIGSEGV</code>
+      </div>
+      <div style="display:flex; align-items:center; gap:12px;">
+        <span style="background:var(--green); color:white; padding:4px 10px; border-radius:12px; font-size:0.75em; font-weight:600;">AFTER FIX</span>
+        <code style="color:var(--green); font-size:0.88em;">All values O(1e-5) &mdash; normal perturbation amplitudes</code>
+      </div>
+    </div>
+
+    <table>
+      <tr><th>Run</th><th>Parameters</th><th>Output modes</th><th>Result</th></tr>
+      <tr>
+        <td>LCDM control</td>
+        <td><code>afterglow_on=0</code></td>
+        <td><code>tCl,pCl,lCl,mPk</code></td>
+        <td><span class="hl-pass">Bit-identical to stock CLASS</span></td>
+      </tr>
+      <tr>
+        <td>beta=0 (LCDM limit)</td>
+        <td><code>c_D=1, beta=0</code></td>
+        <td><code>tCl,pCl,lCl,mPk</code></td>
+        <td><span class="hl-pass">Perturbations decouple, spectra match LCDM</span></td>
+      </tr>
+      <tr>
+        <td>beta=0.1 (full coupling)</td>
+        <td><code>c_D=1, beta=0.1</code></td>
+        <td><code>tCl,pCl,lCl,mPk</code></td>
+        <td><span class="hl-pass">Completes cleanly, spectra show ISW shift</span></td>
+      </tr>
+      <tr>
+        <td>Large c_D</td>
+        <td><code>c_D=10, beta=0.1</code></td>
+        <td><code>tCl,pCl,lCl,mPk</code></td>
+        <td><span class="hl-pass">Approaches LCDM as expected (w &rarr; -1)</span></td>
+      </tr>
+    </table>
+
+    <div class="note-box" style="margin-top:16px;">
+      <strong>Lesson learned:</strong> For dark-energy fluids with w &lt; 0, <em>never</em> use w as the perturbation sound speed. The equation of state determines how the average density dilutes; the sound speed determines how ripples propagate. They are independent. CLASS knows this (see <code>cs2_fld</code>), and now afterglow does too.
+    </div>
+
+    <h4 style="margin-top:20px; margin-bottom:12px;">Bonus bug: C++ name mangling</h4>
+    <p style="font-size:0.9em;">Before the NaN crash, there was a linker error: CLASS compiles <code>perturbations.c</code> as <strong>C++</strong> (<code>.opp</code> object) but afterglow files as <strong>C</strong> (<code>.o</code> objects). The C++ compiler mangles function names (e.g., <code>afterglow_pert_rhs</code> becomes <code>_Z18afterglow_pert_rhsP...</code>), so the linker couldn't match them.</p>
+    <div class="diagram" style="margin:12px 0; font-size:0.82em;">
+<span style="color:var(--red);">Undefined symbols for architecture arm64:</span>
+<span style="color:var(--red);">  "_Z18afterglow_pert_rhsP...", referenced from: perturb_derivs(...)  </span>
+
+<span style="color:var(--green);">Fix: added to afterglow_pert.h:</span>
+<span style="color:var(--green);">#ifdef __cplusplus</span>
+<span style="color:var(--green);">extern "C" {</span>
+<span style="color:var(--green);">#endif</span>
+<span style="color:var(--green);">  // ... all function declarations ...</span>
+<span style="color:var(--green);">#ifdef __cplusplus</span>
+<span style="color:var(--green);">}</span>
+<span style="color:var(--green);">#endif</span>
+    </div>
+  </div>
 </div>
 
 <!-- TAB 4: VALIDATION -->
@@ -1104,6 +1275,29 @@ function toggleQ2(li, idx) {
   if (!isVisible) {
     answer.classList.add('visible');
     li.classList.add('selected');
+  }
+}
+
+// Debug timeline tabs (Crash & Fix)
+function showDbg(idx) {
+  for (var i = 0; i < 6; i++) {
+    var panel = document.getElementById('dbg' + i);
+    if (panel) panel.style.display = 'none';
+  }
+  document.querySelectorAll('.dbg-btn').forEach(function(btn) {
+    btn.classList.remove('active');
+    btn.style.background = 'var(--bg)';
+    btn.style.color = 'var(--muted)';
+    btn.style.borderColor = 'var(--border)';
+  });
+  var target = document.getElementById('dbg' + idx);
+  if (target) target.style.display = 'block';
+  var btns = document.querySelectorAll('.dbg-btn');
+  if (btns[idx]) {
+    btns[idx].classList.add('active');
+    btns[idx].style.background = 'var(--card)';
+    btns[idx].style.color = idx < 3 ? 'var(--red)' : (idx === 3 ? 'var(--purple)' : 'var(--green)');
+    btns[idx].style.borderColor = btns[idx].style.color;
   }
 }
 
