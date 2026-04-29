@@ -3339,6 +3339,8 @@ int input_read_parameters_species(struct file_content * pfc,
     if (flag1 == _TRUE_) pba->ag.beta_aft    = param1;
     class_call(parser_read_double(pfc,"Sigma_today", &param1,&flag1,errmsg),errmsg,errmsg);
     if (flag1 == _TRUE_) pba->ag.Sigma_today = param1;
+    class_call(parser_read_double(pfc,"cs2_X",       &param1,&flag1,errmsg),errmsg,errmsg);
+    if (flag1 == _TRUE_) pba->ag.cs2_X       = param1;
 
     /* disable CLASS's default lambda so total Omega sums to 1 */
     pba->Omega0_lambda = 0.;
