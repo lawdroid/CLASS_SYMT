@@ -1,0 +1,150 @@
+# ==============================================================
+# Cobaya Phase 3c — crossing strip, beta in [2.65, 3.40]
+# CLASS_SYMT afterglow dark energy (Martin & Koh April 2026)
+#
+# Difference from 3b: narrower beta prior centered on the
+# effective-phantom-mimicry strip.
+# Pre-registered prediction (Reply email decision 6):
+#   w_eff dip ~10^-2 below -1 in z in [0.5, 2].
+#   Intrinsic w_X stays >= -1 (hard floor).
+#
+# Expected runtime: ~7-14 days, 32 cores. Run AFTER 3b converges.
+# ==============================================================
+
+theory:
+  afterglow_theory.AfterglowTheory:
+    python_path: ./
+    extra_args:
+      output: "tCl,pCl,lCl,mPk"
+      l_max_scalars: 2508
+      lensing: "yes"
+      non_linear: "halofit"
+      afterglow_on: "yes"
+      cs2_X: 0.5
+      afterglow_shoot_eps_Sigma: "yes"
+      tol_background_integration: 1.0e-5
+      tol_perturbations_integration: 1.0e-5
+
+likelihood:
+  planck_NPIPE_highl_CamSpec.TTTEEE:
+    path: ./data/Planck_NPIPE
+  planck_NPIPE_lowl_TT:
+    path: ./data/Planck_NPIPE
+  planck_NPIPE_lowl_EE:
+    path: ./data/Planck_NPIPE
+  planck_2018_lensing.clik:
+    path: ./data/Planck_NPIPE
+  bao.desi_dr2:
+    path: ./data/DESI_DR2
+  sn.pantheonplus:
+    path: ./data/Pantheon+
+    use_abs_mag: False
+
+params:
+  H0:
+    prior: {min: 55.0, max: 85.0}
+    ref:   {dist: norm, loc: 67.4, scale: 1.0}
+    proposal: 0.5
+    latex: H_0
+  omega_b:
+    prior: {min: 0.019, max: 0.025}
+    ref:   {dist: norm, loc: 0.02237, scale: 0.0002}
+    proposal: 0.0001
+    latex: \Omega_\mathrm{b} h^2
+  omega_cdm:
+    prior: {min: 0.10, max: 0.15}
+    ref:   {dist: norm, loc: 0.1200, scale: 0.001}
+    proposal: 0.0005
+    latex: \Omega_\mathrm{cdm} h^2
+  tau_reio:
+    prior: {min: 0.01, max: 0.10}
+    ref:   {dist: norm, loc: 0.0543, scale: 0.008}
+    proposal: 0.005
+    latex: \tau_\mathrm{reio}
+  ln10As:
+    prior: {min: 2.5, max: 3.5}
+    ref:   {dist: norm, loc: 3.044, scale: 0.014}
+    proposal: 0.005
+    latex: \ln 10^{10} A_\mathrm{s}
+  n_s:
+    prior: {min: 0.92, max: 1.00}
+    ref:   {dist: norm, loc: 0.965, scale: 0.004}
+    proposal: 0.003
+    latex: n_\mathrm{s}
+
+  log10_c_D:
+    prior: {min: 0.7, max: 2.0}
+    ref:   {dist: norm, loc: 1.0, scale: 0.2}
+    proposal: 0.1
+    latex: \log_{10} c_D
+  c_D:
+    derived: "lambda log10_c_D: 10 ** log10_c_D"
+    latex: c_D
+
+  # 3c crossing strip
+  beta_aft:
+    prior: {min: 2.65, max: 3.40}
+    ref:   {dist: norm, loc: 3.0, scale: 0.1}
+    proposal: 0.05
+    latex: \beta
+
+  # Late-branch guard: c_D > (1 + 4 beta) / 3 (decision 3)
+  # At beta = 3: requires c_D > 13/3 ~ 4.33; so log10_c_D > ~0.64
+  # Our log10_c_D prior min is 0.7, so the guard is active at the boundary.
+  late_branch_guard:
+    derived: "lambda c_D, beta_aft: c_D - (1.0 + 4.0 * beta_aft) / 3.0"
+    prior: {min: 0.0, max: 1.0e10}
+    drop: True
+
+  # ---------- derived predictions ----------
+  w_X:
+    derived: "lambda c_D: -1.0 + 1.0 / (3.0 * c_D)"
+    latex: w_X
+  Omega_m:
+    latex: \Omega_\mathrm{m}
+  sigma8:
+    latex: \sigma_8
+  sigma8_at_z0p1:
+    derived: True
+    latex: \sigma_8(z=0.1)
+  sigma8_at_z0p3:
+    derived: True
+    latex: \sigma_8(z=0.3)
+  sigma8_at_z0p5:
+    derived: True
+    latex: \sigma_8(z=0.5)
+  fsigma8_at_z0p1:
+    derived: True
+    latex: f\sigma_8(z=0.1)
+  fsigma8_at_z0p3:
+    derived: True
+    latex: f\sigma_8(z=0.3)
+  fsigma8_at_z0p5:
+    derived: True
+    latex: f\sigma_8(z=0.5)
+  # 3c-specific: phantom-mimicry diagnostic at three redshifts
+  w_eff_z0p5:
+    derived: True
+    latex: w_\mathrm{eff}(z=0.5)
+  w_eff_z1p0:
+    derived: True
+    latex: w_\mathrm{eff}(z=1.0)
+  w_eff_z2p0:
+    derived: True
+    latex: w_\mathrm{eff}(z=2.0)
+
+sampler:
+  mcmc:
+    Rminus1_stop: 0.01
+    Rminus1_cl_stop: 0.05
+    max_samples: 800000
+    learn_proposal: True
+    learn_proposal_Rminus1_max: 2.0
+    covmat: auto
+    output_every: 60s
+
+output: chains/phase3c_crossing/afterglow_3c
+resume: True
+force: False
+debug: False
+packages_path: ./cobaya_packages

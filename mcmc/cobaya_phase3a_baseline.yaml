@@ -1,0 +1,160 @@
+# ==============================================================
+# Cobaya Phase 3a — beta = 0 baseline (arrested-medium hypothesis)
+# CLASS_SYMT afterglow dark energy (Martin & Koh April 2026)
+#
+# Strategy reference:  Tom/Phase3_MCMC_Master_Plan.md
+# Execution reference: Tom/Phase3_MCMC_Windows_Execution.md §4.1
+# Email reference:     Tom/Reply_to_Tom_Phase3_Launch.md
+#
+# Locked decisions (Tom + Ingyu, 4/30 meeting):
+#   1. epsilon_Sigma via flatness shooting (afterglow_shoot_eps_Sigma)
+#   2. cs2_X = 1/2 fixed.  Sensitivity verified at cs2_X = 1/3 in
+#      figures/cb2_sensitivity.pdf (TT spread ~0.9%; EE/TE closure-
+#      independent at 1e-6).
+#   3. Late-branch guard c_D > (1 + 4*beta)/3 in prior (vacuous at
+#      beta = 0; included for symmetry with 3b/3c).
+#   5. sigma_8 + f*sigma_8 derived at z = 0.1, 0.3, 0.5.
+#
+# Operational targets:
+#   - Convergence: Rminus1_stop = 0.01 (tighter than legacy 0.02).
+#   - Replication: emcee backend (separate, not in this yaml).
+#   - Provenance: tagged commit phase3-prereg-v1 + data SHA-256.
+#
+# Datasets per Reply email (operational item D):
+#   Planck PR4 (NPIPE) TTTEEE high-l + low-l + lensing
+#   DESI DR2 BAO
+#   Pantheon+ SNe (no SH0ES anchor)
+#
+# Expected runtime: ~2-4 days, 16 cores.
+# ==============================================================
+
+theory:
+  afterglow_theory.AfterglowTheory:
+    python_path: ./
+    extra_args:
+      output: "tCl,pCl,lCl,mPk"
+      l_max_scalars: 2508
+      lensing: "yes"
+      non_linear: "halofit"
+      afterglow_on: "yes"
+      afterglow_beta: 0.0                # FIXED for 3a
+      cs2_X: 0.5                         # decision 2
+      afterglow_shoot_eps_Sigma: "yes"   # decision 1
+      tol_background_integration: 1.0e-5
+      tol_perturbations_integration: 1.0e-5
+
+likelihood:
+  # --- Planck PR4 (NPIPE) ---
+  planck_NPIPE_highl_CamSpec.TTTEEE:
+    path: ./data/Planck_NPIPE
+  planck_NPIPE_lowl_TT:
+    path: ./data/Planck_NPIPE
+  planck_NPIPE_lowl_EE:
+    path: ./data/Planck_NPIPE
+  planck_2018_lensing.clik:
+    path: ./data/Planck_NPIPE        # NPIPE lensing where available, else 2018
+
+  # --- DESI DR2 BAO ---
+  bao.desi_dr2:
+    path: ./data/DESI_DR2
+
+  # --- Pantheon+ (no SH0ES) ---
+  sn.pantheonplus:
+    path: ./data/Pantheon+
+    use_abs_mag: False                # decision: no SH0ES anchor
+
+params:
+  # ---------- standard cosmology ----------
+  H0:
+    prior: {min: 55.0, max: 85.0}
+    ref:   {dist: norm, loc: 67.4, scale: 1.0}
+    proposal: 0.5
+    latex: H_0
+  omega_b:
+    prior: {min: 0.019, max: 0.025}
+    ref:   {dist: norm, loc: 0.02237, scale: 0.0002}
+    proposal: 0.0001
+    latex: \Omega_\mathrm{b} h^2
+  omega_cdm:
+    prior: {min: 0.10, max: 0.15}
+    ref:   {dist: norm, loc: 0.1200, scale: 0.001}
+    proposal: 0.0005
+    latex: \Omega_\mathrm{cdm} h^2
+  tau_reio:
+    prior: {min: 0.01, max: 0.10}
+    ref:   {dist: norm, loc: 0.0543, scale: 0.008}
+    proposal: 0.005
+    latex: \tau_\mathrm{reio}
+  ln10As:
+    prior: {min: 2.5, max: 3.5}
+    ref:   {dist: norm, loc: 3.044, scale: 0.014}
+    proposal: 0.005
+    latex: \ln 10^{10} A_\mathrm{s}
+  n_s:
+    prior: {min: 0.92, max: 1.00}
+    ref:   {dist: norm, loc: 0.965, scale: 0.004}
+    proposal: 0.003
+    latex: n_\mathrm{s}
+
+  # ---------- afterglow sector ----------
+  # Sample log10(c_D) in the near-vacuum regime per Afterglow Table 2.
+  # c_D in [5, 100] => log10 c_D in [0.7, 2.0].
+  log10_c_D:
+    prior: {min: 0.7, max: 2.0}
+    ref:   {dist: norm, loc: 1.0, scale: 0.2}
+    proposal: 0.1
+    latex: \log_{10} c_D
+  c_D:
+    derived: "lambda log10_c_D: 10 ** log10_c_D"
+    latex: c_D
+
+  # Late-branch guard: at beta = 0 this is c_D > 1/3, vacuous.
+  # Kept for parallelism with 3b/3c.
+  late_branch_guard:
+    derived: "lambda c_D: c_D - 1.0/3.0"
+    prior: {min: 0.0, max: 1.0e10}
+    drop: True
+
+  # ---------- derived predictions (decision 5) ----------
+  w_X:
+    derived: "lambda c_D: -1.0 + 1.0 / (3.0 * c_D)"
+    latex: w_X
+  Omega_m:
+    latex: \Omega_\mathrm{m}
+  sigma8:
+    latex: \sigma_8
+  sigma8_at_z0p1:
+    derived: True
+    latex: \sigma_8(z=0.1)
+  sigma8_at_z0p3:
+    derived: True
+    latex: \sigma_8(z=0.3)
+  sigma8_at_z0p5:
+    derived: True
+    latex: \sigma_8(z=0.5)
+  fsigma8_at_z0p1:
+    derived: True
+    latex: f\sigma_8(z=0.1)
+  fsigma8_at_z0p3:
+    derived: True
+    latex: f\sigma_8(z=0.3)
+  fsigma8_at_z0p5:
+    derived: True
+    latex: f\sigma_8(z=0.5)
+
+# ---------- sampler ----------
+sampler:
+  mcmc:
+    Rminus1_stop: 0.01                 # operational A
+    Rminus1_cl_stop: 0.05
+    max_samples: 500000
+    learn_proposal: True
+    learn_proposal_Rminus1_max: 2.0
+    covmat: auto
+    output_every: 60s
+
+output: chains/phase3a_baseline/afterglow_3a
+resume: True
+force: False
+debug: False
+packages_path: ./cobaya_packages

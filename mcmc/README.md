@@ -1,117 +1,91 @@
 # Phase 3 MCMC — CLASS_SYMT Afterglow
 
-Two-stage Bayesian fit for the Martin & Koh (April 2026) afterglow
-dark-energy model against current cosmological data.
+Three-branch Bayesian fit for the Martin & Koh (April 2026) afterglow
+dark-energy model against current cosmological data, run as three sequential
+chains. Strategy committed in `Tom/Phase3_MCMC_Master_Plan.md` and
+`Tom/Reply_to_Tom_Phase3_Launch.md`. Execution recipe in
+`Tom/Phase3_MCMC_Windows_Execution.md`.
 
-## Design
+## Three-branch design
 
-| Stage | Sampler | Datasets | Runtime | Purpose |
-|-------|---------|----------|---------|---------|
-| 1 | Cobaya MCMC × 8 | Pantheon+ · DESI DR2 BAO · Planck 2018 compressed | 2–4 days / 16 cores | Background-only constraint on `c_D`, `β`, `Ω₀_X` |
-| 2 | Cobaya PolyChord | Stage-1 + Planck TTTEEE (plik_lite) + lensing + DESI f σ₈ | 7–14 days / 32 cores | Full perturbation fit + Bayes-factor vs ΛCDM |
+| Branch | Sampler | β prior | Hypothesis | Runtime | Yaml |
+|---|---|---|---|---|---|
+| 3a | Cobaya MH × 8 | β = 0 (fixed) | Arrested medium — no DE→matter exchange | 2-4 days / 16 cores | `cobaya_phase3a_baseline.yaml` |
+| 3b | Cobaya MH × 8 | β ∈ (0, 2.4] | Non-crossing exchange — DE leaks energy into matter | 7-14 days / 32 cores | `cobaya_phase3b_noncrossing.yaml` |
+| 3c | Cobaya MH × 8 | β ∈ [2.65, 3.40] | Crossing strip — effective phantom mimicry | 7-14 days / 32 cores | `cobaya_phase3c_crossing.yaml` |
 
-## Prerequisites
+All three are pre-committed: no dropping 3b or 3c on the basis of 3a results.
 
-### 1. Apply Patches 7–12 to live CLASS
-Before any MCMC can run, you need a CLASS binary that understands the
-afterglow parameters. From the repo root:
+## Locked decisions (Tom + Ingyu, 2026-04-30 meeting)
+
+1. ε_Σ via flatness shooting (`afterglow_shoot_eps_Sigma`).
+2. `cs2_X = 1/2` fixed across all three branches. Sensitivity at `cs2_X = 1/3`
+   verified pre-meeting; see `figures/cb2_sensitivity.pdf`.
+3. Late-branch guard `c_D > (1 + 4β)/3` enforced as a hard prior cutoff.
+4. Cℓ localization at β = 0.1 verified before 3b launch; see
+   `figures/delta_cl_beta_0p1.pdf`.
+5. σ₈(z) and f σ₈(z) at z = 0.1, 0.3, 0.5 emitted as derived parameters in
+   all three yamls.
+6. Pre-registered numerical thresholds in `PHASE3_PREREGISTRATION.md`.
+
+## Datasets
+
+| Probe | Source | Path |
+|---|---|---|
+| CMB | Planck PR4 (NPIPE) TTTEEE high-l, low-l TT/EE, lensing | `data/Planck_NPIPE/` |
+| BAO | DESI DR2 | `data/DESI_DR2/` |
+| SNe | Pantheon+ (no SH0ES anchor) | `data/Pantheon+/` |
+
+These directories must be provisioned with the actual data files **before** the
+provenance lock (`PHASE3_PREREGISTRATION.md` SHA-256 block) and chain launch.
+The submit scripts pre-flight check for their existence.
+
+## Operational targets
+
+| Item | Value |
+|---|---|
+| Convergence | `Rminus1_stop = 0.01` (tighter than legacy 0.02), ESS > 1000 per parameter |
+| Replication | emcee backend, separate from this yaml — to be added |
+| Provenance | git tag `phase3-prereg-v1` + data SHA-256 in `PHASE3_PREREGISTRATION.md` |
+
+## Pre-flight diagnostics (already executed)
+
+| Script | Purpose | Output |
+|---|---|---|
+| `scripts/cb2_sensitivity.py` | Decision 2 — `cs2_X` ∈ {1/3, 1/2} sensitivity at β=0.1 | `figures/cb2_sensitivity.pdf` |
+| `scripts/delta_cl_diagnostic.py` | Decision 4 — β=0.1 background-only vs perturbative decomposition | `figures/delta_cl_beta_0p1.pdf` |
+| `scripts/forward_model_sweep.py` | Plan §5.1 — Cℓ/Pk at 7 β values across 3a/3b/3c priors | `figures/forward_model_sweep.pdf` |
+
+**Open issue surfaced by `forward_model_sweep`:** at `c_D = 8.0`, the
+perturbation integrator produces NaN in P(k) and Cℓ for β ∈ [2.7, 3.4]
+(the 3c crossing strip), even though the late-branch guard
+`c_D > (1 + 4β)/3 ≈ 4.87` is satisfied. The numerical instability is
+narrower than the analytic guard predicts. Resolution required before
+3c launch: either narrow the c_D prior in 3c (raise `log10_c_D` floor
+above 0.7), or tighten `tol_perturbations_integration` to 1e-7, or
+isolate which sub-equation breaks down. Tracked separately as a Tier
+follow-up.
+
+## Launch sequence
+
 ```powershell
-# Apply Patch 7 (Phase 1b.2) to source/background.c
-# Apply Patches 8-12 (Phase 2) to include/perturbations.h + source/perturbations.c
-# (see PHASE1B2_PATCHES.md and PHASE2_PATCHES.md for exact diffs)
+# From CLASS_SYMT/ on Windows PowerShell, after PHASE3_PREREGISTRATION.md
+# is committed and the phase3-prereg-v1 tag is pushed:
 
-make clean && make class -j8
-./class -h | grep afterglow      # should list afterglow_on, afterglow_c_D, afterglow_beta
+.\mcmc\submit_phase3a.ps1
+# Wait for convergence (Rminus1 < 0.01). Inspect chains/phase3a_baseline/.
+
+.\mcmc\submit_phase3b.ps1
+# Same.
+
+.\mcmc\submit_phase3c.ps1   # blocked until the c_D=8.0 NaN issue is resolved
 ```
 
-### 2. Install Cobaya + dependencies
-```bash
-pip install cobaya getdist mpi4py matplotlib
-pip install cobaya[polychord]        # Stage-2 nested sampling
-cobaya-install cosmo -p ./cobaya_packages   # downloads Planck likelihoods etc
-```
+Each submit script pre-flights the CLASS binary, dataset directories, and
+(for 3b/3c) the prior chain's convergence sentinel.
 
-### 3. Download datasets
-Place under `./data/`:
-- `Pantheon+/` — https://github.com/PantheonPlusSH0ES/DataRelease
-- `DESI_DR2/` — https://data.desi.lbl.gov/public/dr2
-- `Planck2018/` — via `cobaya-install` above
+## Archived files
 
-## Run order
-
-### Stage 1 (background-only)
-```bash
-# Linux / WSL / macOS
-./submit_stage1.sh
-
-# Windows PowerShell
-.\submit_stage1.ps1
-```
-Chains auto-stop when Gelman–Rubin R-1 < 0.02. Typical: 60–80k accepted
-samples per chain.
-
-### Inspect Stage 1
-```bash
-python analyze_stage1.py
-```
-Prints 1D marginals, correlations, Gelman-Rubin, and writes
-`chains/stage1/triangle.pdf`.
-
-Headline result to look for:
-- `c_D = 1.3 ± 0.15` would match the paper's preferred value.
-- `w_X(0) > -1 at 2σ` would be a dynamical-DE detection.
-
-### Stage 2 (full perturbations)
-```bash
-./submit_stage2.sh
-```
-PolyChord outputs posterior + evidence log Z. Bayes factor vs ΛCDM
-appears in `chains/stage2/afterglow_full.stats`.
-
-## File map
-
-```
-mcmc/
-├── README.md                     (this file)
-├── cobaya_stage1.yaml            Stage-1 config
-├── cobaya_stage2.yaml            Stage-2 config
-├── afterglow_theory.py           Custom Cobaya theory wrapper
-├── submit_stage1.ps1 / .sh       Launchers
-├── submit_stage2.sh              Stage-2 launcher
-├── analyze_stage1.py             Post-run triage
-└── chains/
-    ├── stage1/                   Stage-1 chains + triangle.pdf
-    └── stage2/                   Stage-2 chains + evidence
-```
-
-## Expected outcome (author estimate)
-
-Based on current Planck 2018 + DESI DR2 + Pantheon+ combined analyses
-and the paper's fiducial parameter ranges:
-
-- Stage 1 should pin `c_D` to ~10% precision, `β` to ~30%, and
-  favor `c_D ≈ 1.3` over `c_D → ∞` (ΛCDM) at 1-2σ if the DESI DR2
-  w₀w_a hint holds up in the independent fit.
-- Stage 2 will either confirm (tightened c_D, β) or rule out the
-  MIS memory signature via growth-sector constraints (σ₈, f σ₈).
-
-Bayes factor log Z_aft − log Z_ΛCDM > 3 would be strong preference
-for afterglow; |Δ log Z| < 1 inconclusive; < −3 ruling afterglow
-out against the data combo.
-
-## Troubleshooting
-
-**`AfterglowTheory` raises "CLASS does not have afterglow support"**
-→ Patches 7–12 not applied or CLASS wasn't rebuilt. Re-run `make class`.
-
-**Chains stuck at R-1 = 0.3+**
-→ Check `beta_aft` prior edge — posterior may be pushing against β = 0
-boundary. Remove the `min: 0.0` bound or switch to `log10(beta + 1)`.
-
-**PolyChord OOM on 32 cores**
-→ Reduce `nlive` from 500 to 300 in `cobaya_stage2.yaml`.
-
-## Citation
-
-Martin & Koh (April 2026), "Dark Energy as the Thermodynamic Afterglow
-of a Hidden Gauge-Theory Transition." (Paper attached in `docs/`.)
+The earlier two-stage strategy (Stage 1 background-only → Stage 2 PolyChord
+perturbations) was superseded by the three-branch strategy on 2026-04-30.
+Files renamed `*_archived_2026-04-30.*` are retained for provenance.
