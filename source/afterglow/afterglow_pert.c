@@ -99,11 +99,25 @@ int afterglow_pert_rhs(struct afterglow_params * ap,
       -H_conf * (1.0 - 3.0 * cs2) * theta_X
       + (k * k) * (cs2 / one_plus_w) * sigma_hat;
 
-  /* (P3) memory equation — the Phase 2 novelty. */
+  /* (P3) memory equation — the Phase 2 novelty.
+     The (1 - beta*Psi) factor flips sign on the trajectory through r = 2-sqrt(3)
+     when beta*Psi_max = beta*(2 sqrt(3)/9) > 1 (i.e. beta > ~2.598), causing
+     an exponentially unstable mode in the linearized closure. The B1 regulator
+     replaces (1 - beta*Psi) with smooth max(0, 1 - beta*Psi) of width delta:
+        f_reg = 0.5 * (x + sqrt(x^2 + delta^2))
+     converging to x for x >> delta and to 0 for x << -delta.
+     delta = 0 disables the regulator (preserves the original closure exactly,
+     so Phase 2 regression tests with beta in [0, 2.4] are byte-identical). */
+  double one_minus_bP = 1.0 - beta * Psi_bar;
+  double delta_reg = ap->bp_regulator;
+  double one_minus_bP_eff =
+      (delta_reg > 0.0)
+        ? 0.5 * (one_minus_bP + sqrt(one_minus_bP * one_minus_bP + delta_reg * delta_reg))
+        : one_minus_bP;
   *d_sigma_hat =
       (H_conf / c_D) * beta * r_bar * Psi_prime_bar * (delta_c - delta_X)
       - (theta_X + 0.5 * h_prime_syn) / (3.0 * c_D)
-          * (1.0 - beta * Psi_bar);
+          * one_minus_bP_eff;
 
   return _SUCCESS_;
 }

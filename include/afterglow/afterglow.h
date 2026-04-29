@@ -49,6 +49,11 @@ struct afterglow_params {
   double beta_aft;          /**< loading coupling beta (Eq. 37, Eq. 42)   */
   double Sigma_today;       /**< IC for memory variable; <0 means auto    */
   double cs2_X;             /**< rest-frame sound speed^2 (causal => 1)   */
+  double bp_regulator;      /**< B1 regulator: smooth max(0, 1-beta*Psi)
+                                 with width delta. 0 => disabled (default;
+                                 preserves Phase 2 regression). >0 enables
+                                 smooth clamp in afterglow_pert_rhs P3 to
+                                 prevent unstable mode when beta*Psi > 1.   */
   short afterglow_on;       /**< 0 => LCDM limit, 1 => full model         */
 };
 

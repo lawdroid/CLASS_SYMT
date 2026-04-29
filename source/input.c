@@ -3328,6 +3328,7 @@ int input_read_parameters_species(struct file_content * pfc,
     pba->ag.beta_aft     = 0.0;
     pba->ag.Sigma_today  = -1.0;     /* -1 => auto: Omega0_X/(3 c_D) */
     pba->ag.cs2_X        = 1.0;
+    pba->ag.bp_regulator = 0.0;     /* B1 regulator off by default */
     pba->ag.z_conf       = 1.0e5;
     pba->ag.Omega0_dr_dark = 0.0;
 
@@ -3341,6 +3342,8 @@ int input_read_parameters_species(struct file_content * pfc,
     if (flag1 == _TRUE_) pba->ag.Sigma_today = param1;
     class_call(parser_read_double(pfc,"cs2_X",       &param1,&flag1,errmsg),errmsg,errmsg);
     if (flag1 == _TRUE_) pba->ag.cs2_X       = param1;
+    class_call(parser_read_double(pfc,"bp_regulator",&param1,&flag1,errmsg),errmsg,errmsg);
+    if (flag1 == _TRUE_) pba->ag.bp_regulator = param1;
 
     /* disable CLASS's default lambda so total Omega sums to 1 */
     pba->Omega0_lambda = 0.;

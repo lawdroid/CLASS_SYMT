@@ -56,22 +56,25 @@ The submit scripts pre-flight check for their existence.
 | `scripts/delta_cl_diagnostic.py` | Decision 4 — β=0.1 background-only vs perturbative decomposition | `figures/delta_cl_beta_0p1.pdf` |
 | `scripts/forward_model_sweep.py` | Plan §5.1 — Cℓ/Pk at 7 β values across 3a/3b/3c priors | `figures/forward_model_sweep.pdf` |
 
-**Open issue surfaced by `forward_model_sweep`, both cheap fixes ruled
-out on 2026-04-30:** at every c_D tested ∈ {8, 15, 30, 60, 100}, the
-perturbation integrator produces NaN/Inf for β > 2.65. At c_D = 100,
-β = 2.65 is clean but β = 2.7+ all fail. Tighter tolerance
-(`tol_perturbations_integration = 1e-7`) does not help.
+**Open issue resolution path: B1 smooth regulator implemented 2026-04-30,
+partial fix.** `source/afterglow/afterglow_pert.c` now applies an optional
+smooth clamp `f(x, δ) = ½(x + √(x² + δ²))` to the `(1 − β·Ψ)` factor in
+the σ̂ memory equation. Width δ is exposed via .ini parameter
+`bp_regulator` (default 0 = original closure exactly).
 
-This is a structural boundary at β · Ψ_max ≈ 1, not a stiffness or
-precision issue: the linearized closure for σ̂ develops an unstable
-mode when (1 − β Ψ) flips sign on the trajectory through r = 2 − √3.
-The full 3c prior strip [2.65, 3.40] is inside this regime.
+With `bp_regulator = 0.1` the integrator no longer crashes for
+β ∈ {2.7, 3.0, 3.4}. But δ-sensitivity check (δ ∈ {0.05, 0.1, 0.2})
+shows the answer is regulator-independent only for **β ≤ 2.7**
+(TT spread 1.1%) — at β = 3.0 the spread is 7.7%, at β = 3.4 it's
+31%, meaning the regulator is dictating the answer rather than just
+preventing crashes. **B1 is usable as a quick fix only for a narrow
+prior β ∈ [2.65, ~2.75].** Full 3c crossing strip needs B3 (proper
+PPF closure adapted from CLASS's `w_fld` PPF code, ~1 work-week).
 
-3c launch decision is **Tom-gated** — see `PHASE3_PREREGISTRATION.md`
-§5. Three options on the table: (B) source-level closure fix
-(multi-week research), (narrow) reduce 3c prior to β ∈ [2.55, 2.65]
-bridge strip, or (drop) defer 3c entirely to follow-up paper. 3a and
-3b proceed on schedule; this issue does not gate them.
+3c decision tree, all Tom-gated, in `PHASE3_PREREGISTRATION.md` §5:
+**B1-narrow** (quick, ~30 min to lock) | **B3** (proper, ~1 week) |
+**Drop 3c** (ship 3a + 3b, defer 3c). 3a and 3b proceed on schedule
+regardless; this issue does not gate them.
 
 ## Launch sequence
 

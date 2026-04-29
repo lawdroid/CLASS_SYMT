@@ -141,22 +141,51 @@ r = 2 − √3 (where Ψ hits its maximum), and the linearized
 **physics, not numerics** — the linearized dark-sector closure
 breaks down inside the 3c prior strip.
 
-### Resolution paths (Tom decision required)
+### Path B1 — smooth regulator implemented and tested 2026-04-30
 
-1. **Path B (source investigation):** add nonlinear regulator or
-   alternative closure for the unstable mode in
-   `source/afterglow/afterglow_pert.c`. Research task, multi-week.
-2. **Narrow 3c prior to a thin "bridge" β ∈ [2.55, 2.65]:**
-   samples the closest-to-crossing strip the linear theory can still
-   handle. Loses the upper end of Tom's intended range but keeps
-   3c in the publishable result.
-3. **Drop 3c from this Phase 3 round.** Run only 3a + 3b; defer 3c
-   to a follow-up paper after the closure is fixed. The pre-
-   registration commitment to all-three-branches becomes a
-   commitment-with-caveat documented here.
+`source/afterglow/afterglow_pert.c` now applies an optional smooth
+clamp to the `(1 − β·Ψ)` factor in the σ̂ memory equation:
+
+```
+f_reg(x, δ) = 0.5 · (x + sqrt(x² + δ²))     where x = 1 − β·Ψ
+```
+
+Converges to `x` for `x ≫ δ` (preserves Phase 2 closure exactly when
+β·Ψ ≪ 1) and to `0` for `x ≪ −δ` (kills the unstable mode when
+β·Ψ > 1). Width δ is exposed via `.ini` parameter `bp_regulator`.
+**Default `bp_regulator = 0` disables it** — Phase 2 regression
+(28+27 = 55 tests) still byte-identical with the regulator off.
+
+Probe results at c_D = 8.0, cs2_X = 0.5:
+
+| β | δ = 0.05 | δ = 0.1 | δ = 0.2 | δ-spread on TT |
+|---|---|---|---|---|
+| 2.7 | clean | clean | clean | **1.1%** (regulator-independent) |
+| 3.0 | clean | clean | clean | **7.7%** (mildly δ-dependent) |
+| 3.4 | clean | clean | clean | **31%** (regulator-dominated) |
+
+**B1 is a usable interim fix only in a narrow region.** β ≲ 2.7 gives
+δ-independent answers (regulator is doing nothing physical, just
+preventing numerical breakdown). β ≳ 3.0 the regulator strength
+changes the observable answer — that's not physics, that's the
+regulator. β = 3.4 is essentially regulator-defined, not model-defined.
+
+### Updated resolution paths
+
+| Option | β coverage | Validity |
+|---|---|---|
+| **B1 + narrow prior β ∈ [2.65, ~2.75]** | δ-independent regime | Quick interim; samples a thin slice of crossing strip. ~30 minutes to lock in. |
+| **B3 (PPF closure)** | full original [2.65, 3.40] | Required for the upper half of the strip. ~1 work-week per CLASS PPF adaptation. |
+| **Drop 3c** | none | Phase 3 ships as 3a + 3b; 3c becomes follow-up paper. Pre-registration commitment becomes commitment-with-caveat. |
+
+**Tom decision required at the 4/30 meeting:** choose between B1-narrow
+(quick partial), B3 (proper full coverage, more time), or Drop. The
+B1 regulator is now in code, default-off, available as an opt-in via
+`bp_regulator = 0.1` in the 3c yaml if the narrow-prior option is
+chosen.
 
 3a and 3b are unaffected (β = 0 and β ≤ 2.4 are stable in the
-sweep) and may proceed on the planned schedule.
+sweep, no regulator needed) and may proceed on the planned schedule.
 
 ## 6. Operational targets
 
