@@ -56,15 +56,22 @@ The submit scripts pre-flight check for their existence.
 | `scripts/delta_cl_diagnostic.py` | Decision 4 — β=0.1 background-only vs perturbative decomposition | `figures/delta_cl_beta_0p1.pdf` |
 | `scripts/forward_model_sweep.py` | Plan §5.1 — Cℓ/Pk at 7 β values across 3a/3b/3c priors | `figures/forward_model_sweep.pdf` |
 
-**Open issue surfaced by `forward_model_sweep`:** at `c_D = 8.0`, the
-perturbation integrator produces NaN in P(k) and Cℓ for β ∈ [2.7, 3.4]
-(the 3c crossing strip), even though the late-branch guard
-`c_D > (1 + 4β)/3 ≈ 4.87` is satisfied. The numerical instability is
-narrower than the analytic guard predicts. Resolution required before
-3c launch: either narrow the c_D prior in 3c (raise `log10_c_D` floor
-above 0.7), or tighten `tol_perturbations_integration` to 1e-7, or
-isolate which sub-equation breaks down. Tracked separately as a Tier
-follow-up.
+**Open issue surfaced by `forward_model_sweep`, both cheap fixes ruled
+out on 2026-04-30:** at every c_D tested ∈ {8, 15, 30, 60, 100}, the
+perturbation integrator produces NaN/Inf for β > 2.65. At c_D = 100,
+β = 2.65 is clean but β = 2.7+ all fail. Tighter tolerance
+(`tol_perturbations_integration = 1e-7`) does not help.
+
+This is a structural boundary at β · Ψ_max ≈ 1, not a stiffness or
+precision issue: the linearized closure for σ̂ develops an unstable
+mode when (1 − β Ψ) flips sign on the trajectory through r = 2 − √3.
+The full 3c prior strip [2.65, 3.40] is inside this regime.
+
+3c launch decision is **Tom-gated** — see `PHASE3_PREREGISTRATION.md`
+§5. Three options on the table: (B) source-level closure fix
+(multi-week research), (narrow) reduce 3c prior to β ∈ [2.55, 2.65]
+bridge strip, or (drop) defer 3c entirely to follow-up paper. 3a and
+3b proceed on schedule; this issue does not gate them.
 
 ## Launch sequence
 

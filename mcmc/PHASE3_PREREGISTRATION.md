@@ -118,21 +118,45 @@ requires only c_D > 4.87 at β = 3.4 and is satisfied; the practical
 numerical-stability boundary is narrower than the analytic guard
 predicts.
 
-**Resolution required before 3c launch:**
+### Probes attempted on 2026-04-30 (post-meeting follow-up)
 
-1. Investigate which sub-equation diverges at β ≥ 2.65 — likely
-   candidate is the σ̂ memory variable equation (P3 in
-   `source/afterglow/afterglow_pert.c`) hitting a stiff regime when
-   β Ψ approaches unity.
-2. Tighten `tol_perturbations_integration` from 1e-5 to 1e-7 and
-   re-run the sweep at β = 2.7. If that fixes it, lock the tighter
-   tolerance into `cobaya_phase3c_crossing.yaml`.
-3. If the issue persists, raise the `log10_c_D` floor in the 3c yaml
-   from 0.7 (c_D > 5) to ~1.0 (c_D > 10) and document the
-   prior-narrowing.
+**Path A — tighter perturbation tolerance: FAILED.**
+Re-ran β ∈ {2.7, 3.0, 3.4} at c_D = 8.0 with
+`tol_perturbations_integration = 1e-7` (vs the default 1e-5). All
+three still produce NaN/Inf. The issue is not numerical precision.
 
-3a and 3b are unaffected by this issue (β = 0 and β ≤ 2.4 are stable
-in the sweep) and may proceed on schedule.
+**Path C — raise c_D: FAILED.**
+At β = 2.7, swept c_D ∈ {8, 15, 30, 60, 100}. All produce NaN/Inf.
+Sigma-relaxation stiffness is not the cause. At c_D = 100 swept
+β ∈ {2.65, 2.7, 3.0, 3.2, 3.4}: β = 2.65 is **clean**; β = 2.7+ all
+NaN.
+
+**Interpretation.** β = 2.65 is right at the boundary where
+β · Ψ_max = β · (2√3/9) crosses unity (≈ 1.02 at β = 2.65,
+≈ 1.04 at β = 2.7). The perturbation closure depends on
+`(1 − β Ψ)` being positive across the integration range. When
+β · Ψ_max > 1, this factor flips sign on the trajectory through
+r = 2 − √3 (where Ψ hits its maximum), and the linearized
+σ̂/δ_X system develops an exponentially unstable mode. This is
+**physics, not numerics** — the linearized dark-sector closure
+breaks down inside the 3c prior strip.
+
+### Resolution paths (Tom decision required)
+
+1. **Path B (source investigation):** add nonlinear regulator or
+   alternative closure for the unstable mode in
+   `source/afterglow/afterglow_pert.c`. Research task, multi-week.
+2. **Narrow 3c prior to a thin "bridge" β ∈ [2.55, 2.65]:**
+   samples the closest-to-crossing strip the linear theory can still
+   handle. Loses the upper end of Tom's intended range but keeps
+   3c in the publishable result.
+3. **Drop 3c from this Phase 3 round.** Run only 3a + 3b; defer 3c
+   to a follow-up paper after the closure is fixed. The pre-
+   registration commitment to all-three-branches becomes a
+   commitment-with-caveat documented here.
+
+3a and 3b are unaffected (β = 0 and β ≤ 2.4 are stable in the
+sweep) and may proceed on the planned schedule.
 
 ## 6. Operational targets
 
