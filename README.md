@@ -24,10 +24,18 @@ PDF). See also:
 - [`PHASE1B_PATCHES.md`](PHASE1B_PATCHES.md) — 6 surgical patches for `background.c` / `input.c`
 - [`.claude/SESSION_STATE.md`](.claude/SESSION_STATE.md) — crash-recovery handoff for continued sessions
 
-**Interactive learning artifacts (open in any browser):**
+**Interactive learning artifacts — Phase 2 (background + perturbations):**
 - [`afterglow_simple.html`](afterglow_simple.html) — start here. Four quantities explained plainly: ρ_X, p_X, w, a. Slide c_D and N, watch ρ_X(a) = 0.70·a^(−1/c_D) evolve.
 - [`afterglow_interactive_learn.html`](afterglow_interactive_learn.html) — deeper: Ψ(r) kernel, w_X(c_D), ρ evolution, Q exchange — Play / Learn / Quiz tabs.
 - [`afterglow_class_connection.html`](afterglow_class_connection.html) — why `dρ_X/dloga` is THE connection to CLASS. Click-a-quantity + 5-step walk-through of one ndf15 integration step.
+
+**Interactive learning artifacts — Phase 3 (MCMC posteriors, 3a / 3b / 3c):**
+- [`phase3_summary.html`](phase3_summary.html) — start here. Headline: c_D bounded above (≲ 70 at 95%), w_χ ≈ −0.99 across all three branches, β not constrained within priors. The money plot, the cross-branch marginals, the per-branch KDEs, all on one page.
+- [`phase3_branches_explorer.html`](phase3_branches_explorer.html) — interactive. Switch between 3a / 3b / 3c, pick a parameter pair, see 68% / 95% credible contours from `chains_summary.json`. Cross-branch three-up at the bottom.
+- [`phase3_ym_anchor.html`](phase3_ym_anchor.html) — theory link. The kernel Ψ(r) interactively (Eq. 35), the w_eff dial (Eq. 46), and the β number line showing where 3a / 3b / 3c sit relative to the structural bounds 3√3/2 and 2√3 (Eqs. 94, 96 of the Afterglow paper).
+- [`phase3_geometry_lesson.html`](phase3_geometry_lesson.html) — the §3.11 trap. Three mock posteriors with similar indirect signals — ρ(median)/ρ(peak), best-fit drift, R−1 plateau — but completely different real geometry. Toggle between 1D marginal and 2D KDE views. The lesson: always pull the KDE before storytelling.
+
+Data file: [`chains_summary.json`](chains_summary.json) (currently mock — see `mcmc/gen_chains_summary_mock.py`; real-chain export script to follow).
 
 **Physics notation notes (carried over from 2026-04-14 Q&A):**
 - Overdot `˙` = `d/dt` by convention. The glue function `afterglow_glue_derivs()` returns `d/d(log a) = d/dN` (no H factor on the RHS). Related by `d/dt = H · d/dN`. CLASS steps in log(a), so the d/dN form is what the integrator consumes.

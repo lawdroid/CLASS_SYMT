@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Phase 3 — YM theory anchor for β</title>
+<script src="https://cdn.plot.ly/plotly-2.30.0.min.js"></script>
+<style>
+  body { font-family: -apple-system, Segoe UI, sans-serif; max-width: 920px; margin: 20px auto; padding: 0 20px; background: #0f1420; color: #e6edf3; line-height: 1.55; }
+  h1 { color: #58a6ff; }
+  h2 { color: #ffa657; margin-top: 28px; }
+  h3 { color: #e6edf3; margin-top: 18px; }
+  .card { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 16px 20px; margin: 14px 0; }
+  .muted { color: #8b949e; font-size: 14px; }
+  .val { color: #ffa657; font-weight: 500; }
+  .key { color: #58a6ff; font-weight: 500; }
+  code { background: #0d1117; padding: 2px 6px; border-radius: 3px; color: #ffa657; font-size: 14px; }
+  a { color: #58a6ff; }
+  label { display: block; margin: 10px 0 4px; color: #8b949e; font-size: 13px; }
+  input[type=range] { width: 100%; accent-color: #58a6ff; }
+  .big { font-size: 18px; text-align: center; padding: 14px; background: #0d1117; border-radius: 6px; margin: 10px 0; font-variant-numeric: tabular-nums; }
+  .row { display: flex; gap: 12px; flex-wrap: wrap; }
+  .row > div { flex: 1; min-width: 180px; background: #0d1117; border-radius: 6px; padding: 10px 14px; }
+  .row .l { color: #8b949e; font-size: 12px; }
+  .row .v { color: #ffa657; font-size: 18px; font-weight: 500; margin-top: 4px; }
+  .eqn { background: #0d1117; padding: 10px 14px; border-radius: 6px; font-family: ui-monospace, Menlo, monospace; color: #e6edf3; margin: 8px 0; }
+  .pill { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: 12px; font-weight: 500; margin-right: 4px; }
+  .p3a { background: #0c2d52; color: #85b7eb; }
+  .p3b { background: #08382b; color: #5dcaa5; }
+  .p3c { background: #4a1b0c; color: #f0997b; }
+  .pfor { background: #501313; color: #f09595; }
+</style>
+</head>
+<body>
+
+<h1>YM anchor — where does β come from?</h1>
+<p class="muted">The Martin–Koh afterglow paper (April 2026) does not pick a value of β. It bounds β by structural conditions on the kernel Ψ(r) and the late-branch stability. This page walks through those equations interactively. <a href="phase3_summary.html">← back to summary</a></p>
+
+<div class="card">
+<h2>The kernel Ψ(r) — Eq. (35)</h2>
+<p>The signed loading-unloading kernel that modulates the YM tail relaxation rate. <code>r ≡ ρ_c / ρ_X</code> is the matter-to-dark-energy density ratio.</p>
+<div class="eqn">Ψ(r) = 4 r (r − 1) / (1 + r)³</div>
+<label>r = <span class="val" id="rv">1.00</span></label>
+<input type="range" id="r" min="0.05" max="5" step="0.01" value="1.0" oninput="updateKernel()">
+<div class="row" style="margin-top:10px;">
+  <div><div class="l">Ψ(r)</div><div class="v" id="psival">0.000</div></div>
+  <div><div class="l">sign</div><div class="v" id="psisign">zero</div></div>
+  <div><div class="l">Ψ_max (Eq. 50)</div><div class="v">0.385</div></div>
+  <div><div class="l">at r =</div><div class="v">2 + √3 ≈ 3.73</div></div>
+</div>
+<div id="kernelplot" style="height: 280px; margin-top: 14px;"></div>
+<p class="muted">Ψ &gt; 0 in the matter-loaded regime (r &gt; 1) → relaxation is sped up. Ψ &lt; 0 in the DE-dominated regime (r &lt; 1) → relaxation is slowed. The kernel is fixed once the symmetry / sign requirements are chosen — it is not an independently sampled function.</p>
+</div>
+
+<div class="card">
+<h2>The effective equation of state — Eq. (46)</h2>
+<p>The data observable that β + c_D + Ψ jointly determine. <code>w_eff</code> = the effective DE equation of state in the interacting branch:</p>
+<div class="eqn">w_eff = −1 + (1 − β · Ψ(r)) / (3 c_D)</div>
+<label>β = <span class="val" id="bv">1.50</span></label>
+<input type="range" id="b" min="0" max="3.46" step="0.01" value="1.5" oninput="updateWeff()">
+<label>c_D = <span class="val" id="cdv">20</span></label>
+<input type="range" id="cd" min="0.5" max="80" step="0.1" value="20" oninput="updateWeff()">
+<label>fix Ψ at Ψ_max (r = 2 + √3): show the most extreme behavior the model permits.</label>
+<div class="row">
+  <div><div class="l">β · Ψ_max</div><div class="v" id="bpsi">0.577</div></div>
+  <div><div class="l">w_eff (at Ψ_max)</div><div class="v" id="weff">−0.993</div></div>
+  <div><div class="l">w_X (intrinsic, Eq. 31)</div><div class="v" id="wx">−0.983</div></div>
+  <div><div class="l">phantom?</div><div class="v" id="phantom">no</div></div>
+</div>
+<p class="muted">When <code>β · Ψ_max &gt; 1</code> the bracket flips sign at the kernel maximum, dragging w_eff below −1. This is the structural condition that opens the phantom-crossing window.</p>
+</div>
+
+<div class="card">
+<h2>The β number line — three regions, Eqs. (94) and (96)</h2>
+<p>The crossing condition <code>β · Ψ_max &gt; 1</code> turns into a lower bound on β:</p>
+<div class="eqn">β &gt; 1 / Ψ_max = 3√3 / 2 ≈ 2.598</div>
+<p>The stability upper bound comes from requiring the late-branch decaying solution <code>r → 0</code> to remain stable. With the (1 + 4β)/3 guard on c_D, the full structurally-allowed crossing window is:</p>
+<div class="eqn">3√3 / 2  &lt;  β  &lt;  2√3   (≈ 2.598 to ≈ 3.464)</div>
+<p>So the β line is partitioned into four named regions:</p>
+<div id="numberline" style="height: 200px; margin-top: 12px;"></div>
+<div class="row" style="margin-top:8px;">
+  <div><span class="pill p3a">3a</span><br><span class="muted">β = 0 exactly. Isolated YM tail, no DE↔matter exchange. The Σ̇ relaxation falls back to the source-free form (Eq. 25 in the YM paper).</span></div>
+  <div><span class="pill p3b">3b</span><br><span class="muted">β ∈ (0, 2.4]. Coupled but below the crossing threshold — w_eff stays ≥ −1 for all r.</span></div>
+  <div><span class="pill p3c">3c</span><br><span class="muted">β ∈ [2.598, 3.464]. Inside the allowed crossing window — w_eff dips below −1 near r ≈ 3.73. B1-narrow restricts to [2.65, 2.75] to skirt the BP-regulator δ-sensitivity (see Phase 3 preregistration §6).</span></div>
+  <div><span class="pill pfor">forbidden</span><br><span class="muted">β &gt; 2√3. Late-branch stability guard fails; (1 − β Ψ) flips sign on the trajectory in a way the regulator cannot cleanly absorb.</span></div>
+</div>
+</div>
+
+<div class="card">
+<h2>What this means for the MCMC result</h2>
+<p>Theory carves the β line into a discrete <em>menu</em>: β = 0 (3a), β ∈ (0, 2.4] (3b), β ∈ [2.65, 2.75] (3c). Pre-registering one chain per region was the way to fairly test all three. The result was:</p>
+<ul>
+  <li><span class="key">The data does not pick a region.</span> All three branches are consistent with current data.</li>
+  <li><span class="key">The data does not pick a β within any region.</span> Each branch's β marginal mirrors its prior (see <a href="phase3_branches_explorer.html">explorer</a>).</li>
+  <li><span class="key">The structural bounds are real.</span> 2√3 / 9 is the kernel ceiling no matter what data ever says, and 3√3/2 is the firm crossing threshold below which phantom mimicry is impossible.</li>
+</ul>
+<p>So "YM selects β" in the sense of bounding it to discrete structural windows, not in the sense of picking a numerical value. A microscopic derivation tying β to the YM coupling g_D, the gluon condensate ⟨G²⟩, or ε_Σ — none of which is in the published papers — would be the route to picking a value from theory.</p>
+</div>
+
+<p class="muted">Next: <a href="phase3_branches_explorer.html">Explore the posteriors interactively →</a> &nbsp;·&nbsp; <a href="phase3_geometry_lesson.html">The §3.11 geometry lesson →</a></p>
+
+<script>
+const PLOT_BG = "#0d1117", TEXT = "#e6edf3", MUTED = "#8b949e";
+const PSI_MAX = 2 * Math.sqrt(3) / 9;          // ≈ 0.3849
+const BETA_CROSS = 3 * Math.sqrt(3) / 2;       // ≈ 2.598
+const BETA_MAX = 2 * Math.sqrt(3);             // ≈ 3.464
+
+function psi(r) { return 4 * r * (r - 1) / Math.pow(1 + r, 3); }
+
+function updateKernel() {
+  const r = parseFloat(document.getElementById("r").value);
+  document.getElementById("rv").textContent = r.toFixed(2);
+  const p = psi(r);
+  document.getElementById("psival").textContent = p.toFixed(3);
+  document.getElementById("psisign").textContent =
+    Math.abs(p) < 1e-4 ? "zero" : (p > 0 ? "positive (matter-loaded)" : "negative (DE-dominated)");
+  Plotly.restyle("kernelplot", { x: [[r]], y: [[p]] }, [1]);
+}
+
+function plotKernel() {
+  const rs = [], ps = [];
+  for (let r = 0.02; r <= 5; r += 0.02) { rs.push(r); ps.push(psi(r)); }
+  const data = [
+    { type: "scatter", x: rs, y: ps, mode: "lines", line: { color: "#58a6ff", width: 2 }, name: "Ψ(r)", hoverinfo: "skip" },
+    { type: "scatter", x: [1.0], y: [psi(1.0)], mode: "markers", marker: { color: "#ffa657", size: 8, symbol: "circle-open" }, hoverinfo: "skip", showlegend: false },
+    { type: "scatter", x: [2 + Math.sqrt(3)], y: [PSI_MAX], mode: "markers+text", marker: { color: "#5dcaa5", size: 9, symbol: "diamond" }, text: ["Ψ_max"], textposition: "top right", textfont: { color: "#5dcaa5", size: 11 }, hoverinfo: "skip", showlegend: false },
+  ];
+  const layout = {
+    paper_bgcolor: PLOT_BG, plot_bgcolor: PLOT_BG,
+    font: { color: TEXT, size: 12, family: "-apple-system, Segoe UI, sans-serif" },
+    margin: { l: 50, r: 20, t: 10, b: 40 },
+    xaxis: { title: "r = ρ_c / ρ_X", gridcolor: "#21262d", zerolinecolor: "#21262d" },
+    yaxis: { title: "Ψ(r)", gridcolor: "#21262d", zerolinecolor: "#30363d" },
+    shapes: [
+      { type: "line", x0: 0.05, x1: 5, y0: 0, y1: 0, line: { color: "#30363d", width: 1, dash: "dot" } },
+      { type: "line", x0: 1, x1: 1, y0: -1, y1: 0.5, line: { color: "#30363d", width: 1, dash: "dot" } },
+    ],
+    annotations: [
+      { x: 1, y: 0, text: "r = 1<br>Ψ = 0", showarrow: false, font: { color: MUTED, size: 11 }, xshift: 0, yshift: -25 },
+    ],
+    showlegend: false,
+  };
+  Plotly.newPlot("kernelplot", data, layout, { displaylogo: false, responsive: true });
+}
+
+function updateWeff() {
+  const b = parseFloat(document.getElementById("b").value);
+  const cd = parseFloat(document.getElementById("cd").value);
+  document.getElementById("bv").textContent = b.toFixed(2);
+  document.getElementById("cdv").textContent = cd.toFixed(1);
+  const bpsi = b * PSI_MAX;
+  const weff = -1 + (1 - bpsi) / (3 * cd);
+  const wx   = -1 + 1 / (3 * cd);
+  document.getElementById("bpsi").textContent = bpsi.toFixed(3);
+  document.getElementById("weff").textContent = weff.toFixed(4);
+  document.getElementById("wx").textContent   = wx.toFixed(4);
+  document.getElementById("phantom").textContent = weff < -1 ? "yes — w_eff < −1" : "no — w_eff ≥ −1";
+  document.getElementById("phantom").style.color = weff < -1 ? "#f0997b" : "#5dcaa5";
+}
+
+function plotNumberLine() {
+  // a single horizontal "axis" with shaded bands
+  const shapes = [
+    { type: "rect", x0: 0, x1: 0.04, y0: 0.3, y1: 0.7, fillcolor: "#155fa5", line: { width: 0 }, opacity: 0.85 },
+    { type: "rect", x0: 0.04, x1: 2.4, y0: 0.3, y1: 0.7, fillcolor: "#0f6e56", line: { width: 0 }, opacity: 0.75 },
+    { type: "rect", x0: 2.4, x1: BETA_CROSS, y0: 0.3, y1: 0.7, fillcolor: "#444441", line: { width: 0 }, opacity: 0.55 },
+    { type: "rect", x0: BETA_CROSS, x1: BETA_MAX, y0: 0.3, y1: 0.7, fillcolor: "#993c1d", line: { width: 0 }, opacity: 0.75 },
+    { type: "rect", x0: BETA_MAX, x1: 4.0, y0: 0.3, y1: 0.7, fillcolor: "#501313", line: { width: 0 }, opacity: 0.85 },
+    // 3c B1-narrow inset
+    { type: "rect", x0: 2.65, x1: 2.75, y0: 0.36, y1: 0.64, fillcolor: "#f0997b", line: { width: 0 }, opacity: 0.95 },
+    // crossing-threshold marker
+    { type: "line", x0: BETA_CROSS, x1: BETA_CROSS, y0: 0.18, y1: 0.82, line: { color: "#ffa657", width: 1.5, dash: "dash" } },
+    { type: "line", x0: BETA_MAX, x1: BETA_MAX, y0: 0.18, y1: 0.82, line: { color: "#f09595", width: 1.5, dash: "dash" } },
+  ];
+  const annotations = [
+    { x: 0.02, y: 0.92, text: "3a", showarrow: false, font: { color: "#85b7eb", size: 12 } },
+    { x: 1.2,  y: 0.92, text: "3b: β ∈ (0, 2.4]", showarrow: false, font: { color: "#9fe1cb", size: 12 } },
+    { x: 2.5,  y: 0.92, text: "dead", showarrow: false, font: { color: MUTED, size: 11 } },
+    { x: (BETA_CROSS+BETA_MAX)/2, y: 0.92, text: "3c crossing window", showarrow: false, font: { color: "#f5c4b3", size: 12 } },
+    { x: 3.73, y: 0.92, text: "forbidden", showarrow: false, font: { color: "#f09595", size: 12 } },
+    { x: BETA_CROSS, y: 0.10, text: "3√3/2 ≈ 2.598", showarrow: false, font: { color: "#ffa657", size: 11 } },
+    { x: BETA_MAX,   y: 0.10, text: "2√3 ≈ 3.464", showarrow: false, font: { color: "#f09595", size: 11 } },
+    { x: 2.70, y: 0.22, text: "B1-narrow [2.65, 2.75]", showarrow: false, font: { color: "#f5c4b3", size: 10 } },
+  ];
+  const layout = {
+    paper_bgcolor: PLOT_BG, plot_bgcolor: PLOT_BG,
+    font: { color: TEXT, size: 12, family: "-apple-system, Segoe UI, sans-serif" },
+    margin: { l: 30, r: 20, t: 10, b: 40 },
+    xaxis: { title: "β", range: [-0.1, 4.0], gridcolor: "#21262d", zerolinecolor: "#21262d", dtick: 0.5 },
+    yaxis: { range: [0, 1], showticklabels: false, showgrid: false, zeroline: false },
+    shapes: shapes,
+    annotations: annotations,
+    showlegend: false,
+  };
+  Plotly.newPlot("numberline", [{ type: "scatter", x: [0], y: [0], mode: "markers", marker: { color: "rgba(0,0,0,0)" }, hoverinfo: "skip" }], layout, { displaylogo: false, responsive: true, staticPlot: true });
+}
+
+plotKernel();
+plotNumberLine();
+updateKernel();
+updateWeff();
+</script>
+
+</body>
+</html>

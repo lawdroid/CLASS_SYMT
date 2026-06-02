@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Phase 3 — the §3.11 geometry lesson</title>
+<script src="https://cdn.plot.ly/plotly-2.30.0.min.js"></script>
+<style>
+  body { font-family: -apple-system, Segoe UI, sans-serif; max-width: 980px; margin: 20px auto; padding: 0 20px; background: #0f1420; color: #e6edf3; line-height: 1.55; }
+  h1 { color: #58a6ff; }
+  h2 { color: #ffa657; margin-top: 26px; }
+  .card { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 16px 20px; margin: 14px 0; }
+  .muted { color: #8b949e; font-size: 14px; }
+  .val { color: #ffa657; font-weight: 500; }
+  .key { color: #58a6ff; font-weight: 500; }
+  code { background: #0d1117; padding: 2px 6px; border-radius: 3px; color: #ffa657; }
+  a { color: #58a6ff; }
+  .three-up { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 10px; }
+  .geo-card { background: #0d1117; border-radius: 6px; padding: 10px 12px; }
+  .geo-card .gh { color: #58a6ff; font-size: 14px; font-weight: 500; margin-bottom: 6px; }
+  .geo-card .gs { color: #8b949e; font-size: 12px; line-height: 1.5; margin-bottom: 8px; }
+  .geo-plot { height: 200px; }
+  .geo-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 6px; font-size: 12px; }
+  .geo-stats .l { color: #6e7681; }
+  .geo-stats .v { color: #ffa657; font-variant-numeric: tabular-nums; }
+  .controls { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; margin-top: 8px; }
+  button.tog { background: #0d1117; color: #e6edf3; border: 1px solid #30363d; border-radius: 6px; padding: 6px 14px; font-size: 13px; cursor: pointer; font-family: inherit; }
+  button.tog:hover { border-color: #58a6ff; }
+  button.tog.on { background: #0c2d52; border-color: #58a6ff; color: #85b7eb; }
+  .verdict { background: #2a1a05; border-left: 3px solid #ef9f27; padding: 10px 14px; border-radius: 4px; color: #f1cf94; font-size: 14px; margin: 14px 0; }
+</style>
+</head>
+<body>
+
+<h1>The §3.11 geometry lesson</h1>
+<p class="muted">Three mock posteriors with similar <em>indirect</em> signals — same ρ(median)/ρ(peak) range, similar R−1 plateau character, similar best-fit vs median drift — but completely different real geometry. The lesson: <strong>look at the 2D KDE before telling a story</strong>. <a href="phase3_summary.html">← back to summary</a></p>
+
+<div class="card">
+<h2>Three posterior shapes</h2>
+<div class="controls">
+  <span class="muted">view:</span>
+  <button class="tog on" data-view="kde">2D KDE (the truth)</button>
+  <button class="tog" data-view="oned">1D marginal only</button>
+</div>
+<div class="three-up" id="threeup">
+  <div class="geo-card">
+    <div class="gh">A. Skewed unimodal</div>
+    <div class="gs">A single ridge with a long right tail. The median drifts to the right of the peak.</div>
+    <div class="geo-plot" id="geoA"></div>
+    <div class="geo-stats">
+      <span class="l">peak position</span><span class="v">≈ 0.45</span>
+      <span class="l">median position</span><span class="v">≈ 0.94</span>
+      <span class="l">ρ(median)/ρ(peak)</span><span class="v">≈ 0.32</span>
+      <span class="l">best-fit drift</span><span class="v">large</span>
+    </div>
+  </div>
+  <div class="geo-card">
+    <div class="gh">B. Genuinely bimodal</div>
+    <div class="gs">Two clean basins separated by a low-density valley. Median sits in the valley.</div>
+    <div class="geo-plot" id="geoB"></div>
+    <div class="geo-stats">
+      <span class="l">peak position</span><span class="v">≈ 0.30, 1.40</span>
+      <span class="l">median position</span><span class="v">≈ 0.95</span>
+      <span class="l">ρ(median)/ρ(peak)</span><span class="v">≈ 0.18</span>
+      <span class="l">best-fit drift</span><span class="v">large</span>
+    </div>
+  </div>
+  <div class="geo-card">
+    <div class="gh">C. Heavy-tailed unimodal</div>
+    <div class="gs">A single peak with very long tails on both sides. Median is at the peak, but density there is small relative to the tail mass.</div>
+    <div class="geo-plot" id="geoC"></div>
+    <div class="geo-stats">
+      <span class="l">peak position</span><span class="v">≈ 0.85</span>
+      <span class="l">median position</span><span class="v">≈ 0.85</span>
+      <span class="l">ρ(median)/ρ(peak)</span><span class="v">≈ 0.40</span>
+      <span class="l">best-fit drift</span><span class="v">small</span>
+    </div>
+  </div>
+</div>
+</div>
+
+<div class="card">
+<h2>What the indirect signals can and can't tell you</h2>
+<table style="width:100%; border-collapse:collapse; font-size:14px;">
+<tr style="border-bottom:1px solid #30363d;"><th style="text-align:left; padding:8px 0; color:#8b949e;">indirect signal</th><th style="text-align:left; padding:8px 0; color:#8b949e;">A (skewed)</th><th style="text-align:left; padding:8px 0; color:#8b949e;">B (bimodal)</th><th style="text-align:left; padding:8px 0; color:#8b949e;">C (heavy tail)</th></tr>
+<tr><td style="padding:8px 0; color:#e6edf3;">ρ(median)/ρ(peak) &lt; 0.5</td><td style="color:#f0997b;">yes</td><td style="color:#f0997b;">yes</td><td style="color:#f0997b;">yes</td></tr>
+<tr><td style="padding:8px 0; color:#e6edf3;">large best-fit vs median drift</td><td style="color:#f0997b;">yes</td><td style="color:#f0997b;">yes</td><td style="color:#5dcaa5;">no</td></tr>
+<tr><td style="padding:8px 0; color:#e6edf3;">long R−1 plateau (slow mixing)</td><td style="color:#f1cf94;">often</td><td style="color:#f1cf94;">often</td><td style="color:#f1cf94;">often</td></tr>
+<tr><td style="padding:8px 0; color:#e6edf3;">visible 2D bimodality</td><td style="color:#5dcaa5;">no</td><td style="color:#f0997b;">yes</td><td style="color:#5dcaa5;">no</td></tr>
+</table>
+<p class="muted" style="margin-top:10px;">The first three rows can't tell A from B. Only the KDE — the bottom row — actually separates them. Two of these three posteriors are unimodal; one is bimodal. From the indirect signals alone, you cannot tell which is which.</p>
+</div>
+
+<div class="verdict">
+The 3b "two clean basins" reconstruction from 2026-05-12 to 2026-05-15 was a version of this trap — the indirect signals all flashed bimodality, but the real KDE showed shape A: skewed unimodal. The model implied by those indirect signals was geometrically wrong, and the rest of the analysis built on it had to be unwound. The cost was ~3 days. Every future Phase has to pull the KDE first.
+</div>
+
+<div class="card">
+<h2>The rule, codified for next time</h2>
+<ol>
+<li><span class="key">Before</span> describing posterior geometry in writing or to a collaborator, pull the actual 2D KDE for the relevant parameter pair from the converged chain. Use <code>getdist</code>, <code>cobaya-post</code>, or the <code>chains_summary.json</code> exporter — but always start with the KDE.</li>
+<li><span class="key">Treat</span> <code>ρ(median)/ρ(peak) &lt; 0.5</code> as "median is in low-density territory; the geometry needs investigation," <strong>not</strong> as "bimodal." Same for R−1 plateau character and best-fit drift.</li>
+<li><span class="key">Quote</span> percentiles of a flat 1D marginal as descriptive statistics of the prior, not as data-driven bounds. (β's flat 3b marginal is the example: <code>q16 = 0.34</code> does not mean "β &gt; 0.34 ruled in"; it means 16% across a uniform range.)</li>
+</ol>
+</div>
+
+<p class="muted">Source: <code>CLAUDE.md §3.11</code> in the working repository, added 2026-05-15. Next: <a href="phase3_branches_explorer.html">Explore the real Phase 3 posteriors →</a> &nbsp;·&nbsp; <a href="phase3_ym_anchor.html">YM theory anchor →</a></p>
+
+<script>
+const PLOT_BG = "#0d1117", TEXT = "#e6edf3";
+
+// Mock 2D mixture-of-Gaussians fields for three geometries.
+// All emit roughly the same ρ(median)/ρ(peak) range so the indirect-signal
+// "fingerprint" looks similar — only the KDE shape distinguishes them.
+function grid2d(fn, xmin, xmax, ymin, ymax, n = 50) {
+  const z = [], xs = [], ys = [];
+  const dx = (xmax - xmin) / (n - 1), dy = (ymax - ymin) / (n - 1);
+  for (let i = 0; i < n; i++) xs.push(xmin + i * dx);
+  for (let j = 0; j < n; j++) {
+    const row = new Array(n);
+    const y = ymin + j * dy;
+    ys.push(y);
+    for (let i = 0; i < n; i++) row[i] = fn(xs[i], y);
+    z.push(row);
+  }
+  return { z, xs, ys };
+}
+function gauss2(x, y, mx, my, sx, sy, rho) {
+  const u = (x-mx)/sx, v = (y-my)/sy;
+  const k = 1 / (2*Math.PI*sx*sy*Math.sqrt(1-rho*rho));
+  return k * Math.exp(-(u*u - 2*rho*u*v + v*v) / (2*(1-rho*rho)));
+}
+function fnSkewed(x, y) {
+  // single ridge in β with skew toward higher β, narrow in y
+  if (x < 0) return 0;
+  const f = x * Math.exp(-x / 0.45);  // gamma-like in x
+  return f * gauss2(x, y, x, 0.5, 0.5, 0.20, 0.2);
+}
+function fnBimodal(x, y) {
+  return 0.55 * gauss2(x, y, 0.30, 0.45, 0.15, 0.15, 0.0)
+       + 0.45 * gauss2(x, y, 1.40, 0.55, 0.15, 0.15, 0.0);
+}
+function fnHeavyTail(x, y) {
+  return 1.0 / (1 + Math.pow((x-0.85)/0.40, 2) + Math.pow((y-0.50)/0.25, 2));
+}
+
+function credibleLevels(z, levels) {
+  const flat = [];
+  for (let j=0; j<z.length; j++) for (let i=0; i<z[j].length; i++) flat.push(z[j][i]);
+  const total = flat.reduce((a,b)=>a+b, 0);
+  flat.sort((a,b)=>b-a);
+  let cum=0, li=0;
+  const out=[];
+  for (let k=0; k<flat.length && li<levels.length; k++) {
+    cum += flat[k];
+    if (cum >= levels[li]*total) { out.push(flat[k]); li++; }
+  }
+  while (out.length < levels.length) out.push(0);
+  return out;
+}
+
+let currentView = "kde";
+
+function renderGeo(divId, fn, color) {
+  const g = grid2d(fn, 0, 2, 0, 1, 50);
+  if (currentView === "kde") {
+    const lv = credibleLevels(g.z, [0.68, 0.95]);
+    const data = [{
+      type: "contour", x: g.xs, y: g.ys, z: g.z,
+      colorscale: [
+        [0.0, "rgba(13,17,23,0)"],
+        [0.2, "rgba(13,17,23,0)"],
+        [0.25, color + "55"],
+        [0.6, color + "aa"],
+        [1.0, color + "ff"],
+      ],
+      showscale: false,
+      contours: { start: lv[1], end: lv[0], size: (lv[0]-lv[1])/2 || 1 },
+      line: { color: color, width: 1 },
+      hoverinfo: "skip",
+    }];
+    const layout = {
+      paper_bgcolor: PLOT_BG, plot_bgcolor: PLOT_BG,
+      font: { color: TEXT, size: 10 },
+      margin: { l: 32, r: 8, t: 6, b: 24 },
+      xaxis: { title: "β (mock)", gridcolor: "#21262d", zerolinecolor: "#21262d", titlefont: { size: 10 } },
+      yaxis: { title: "y", gridcolor: "#21262d", zerolinecolor: "#21262d", titlefont: { size: 10 } },
+      showlegend: false,
+    };
+    Plotly.newPlot(divId, data, layout, { displaylogo: false, responsive: true, staticPlot: true });
+  } else {
+    // 1D marginal over x = integrate z over y
+    const xs = g.xs;
+    const px = xs.map((_, i) => g.z.reduce((s, row) => s + row[i], 0));
+    const data = [{
+      type: "scatter", x: xs, y: px, mode: "lines",
+      line: { color: color, width: 2 },
+      fill: "tozeroy", fillcolor: color + "33",
+      hoverinfo: "skip",
+    }];
+    const layout = {
+      paper_bgcolor: PLOT_BG, plot_bgcolor: PLOT_BG,
+      font: { color: TEXT, size: 10 },
+      margin: { l: 32, r: 8, t: 6, b: 24 },
+      xaxis: { title: "β (mock)", gridcolor: "#21262d", zerolinecolor: "#21262d", titlefont: { size: 10 } },
+      yaxis: { title: "density", gridcolor: "#21262d", zerolinecolor: "#21262d", titlefont: { size: 10 } },
+      showlegend: false,
+    };
+    Plotly.newPlot(divId, data, layout, { displaylogo: false, responsive: true, staticPlot: true });
+  }
+}
+
+function renderAll() {
+  renderGeo("geoA", fnSkewed,    "#5dcaa5");
+  renderGeo("geoB", fnBimodal,   "#f0997b");
+  renderGeo("geoC", fnHeavyTail, "#85b7eb");
+}
+
+document.querySelectorAll("button.tog").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll("button.tog").forEach(b => b.classList.remove("on"));
+    btn.classList.add("on");
+    currentView = btn.dataset.view;
+    renderAll();
+  });
+});
+
+renderAll();
+</script>
+
+</body>
+</html>

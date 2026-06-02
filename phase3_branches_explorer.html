@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Phase 3 explorer: 3a / 3b / 3c posteriors</title>
+<script src="https://cdn.plot.ly/plotly-2.30.0.min.js"></script>
+<style>
+  body { font-family: -apple-system, Segoe UI, sans-serif; max-width: 980px; margin: 20px auto; padding: 0 20px; background: #0f1420; color: #e6edf3; line-height: 1.5; }
+  h1 { color: #58a6ff; }
+  h2 { color: #ffa657; margin-top: 24px; }
+  .card { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 16px 18px; margin: 14px 0; }
+  .muted { color: #8b949e; font-size: 14px; }
+  .val { color: #ffa657; font-weight: 500; }
+  code { background: #0d1117; padding: 2px 6px; border-radius: 3px; color: #ffa657; }
+  a { color: #58a6ff; }
+  .controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+  .lbl { color: #8b949e; font-size: 13px; margin-right: 4px; }
+  button.bsel { background: #0d1117; color: #e6edf3; border: 1px solid #30363d; border-radius: 6px; padding: 6px 14px; font-size: 14px; cursor: pointer; font-family: inherit; }
+  button.bsel:hover { border-color: #58a6ff; }
+  button.bsel.on { background: #0c2d52; border-color: #58a6ff; color: #85b7eb; }
+  button.bsel.on.b3b { background: #08382b; border-color: #5dcaa5; color: #9fe1cb; }
+  button.bsel.on.b3c { background: #4a1b0c; border-color: #f0997b; color: #f5c4b3; }
+  select { background: #0d1117; color: #e6edf3; border: 1px solid #30363d; border-radius: 6px; padding: 6px 10px; font-size: 14px; font-family: inherit; }
+  .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; margin-top: 12px; }
+  .stat-card { background: #0d1117; border-radius: 6px; padding: 10px 12px; }
+  .stat-card .l { color: #8b949e; font-size: 12px; }
+  .stat-card .v { color: #ffa657; font-size: 16px; font-weight: 500; margin-top: 4px; font-variant-numeric: tabular-nums; }
+  .stat-card .n { color: #6e7681; font-size: 11px; margin-top: 4px; }
+  .mini-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 14px; }
+  .mini-card { background: #0d1117; border-radius: 6px; padding: 10px; text-align: center; cursor: pointer; border: 1px solid transparent; }
+  .mini-card.on.b3a { border-color: #58a6ff; }
+  .mini-card.on.b3b { border-color: #5dcaa5; }
+  .mini-card.on.b3c { border-color: #f0997b; }
+  .mini-card .lbl { font-size: 12px; color: #8b949e; margin-bottom: 6px; }
+  .mini-plot { height: 110px; }
+  .lesson { background: #0c2d52; color: #85b7eb; padding: 10px 14px; border-radius: 6px; font-size: 14px; line-height: 1.6; margin-top: 14px; border-left: 3px solid #58a6ff; }
+  .lesson.l3b { background: #08382b; color: #9fe1cb; border-left-color: #5dcaa5; }
+  .lesson.l3c { background: #4a1b0c; color: #f5c4b3; border-left-color: #f0997b; }
+  .warn { background: #2a1a05; border-left: 3px solid #ef9f27; padding: 10px 14px; border-radius: 4px; color: #f1cf94; font-size: 13px; margin: 10px 0; }
+</style>
+</head>
+<body>
+
+<h1>Phase 3 explorer</h1>
+<p class="muted">2D KDEs for the three pre-registered branches. Pick a branch, pick a parameter pair, see the 68% and 95% credible contours. <a href="phase3_summary.html">← back to summary</a></p>
+
+<div class="warn">Data is from <strong>mock samples</strong> in <code>chains_summary.json</code>. The shapes are realistic but the numbers are not from real chains yet.</div>
+
+<div class="card">
+  <div class="controls">
+    <button class="bsel on" data-br="3a">3a baseline</button>
+    <button class="bsel b3b" data-br="3b">3b non-crossing</button>
+    <button class="bsel b3c" data-br="3c">3c crossing</button>
+    <span style="flex:1;"></span>
+    <span class="lbl">x</span><select id="xkey"></select>
+    <span class="lbl">y</span><select id="ykey"></select>
+  </div>
+  <div id="mainplot" style="height: 480px; margin-top: 12px;"></div>
+</div>
+
+<div class="card">
+  <h2 style="margin-top:0;">Stats — current branch / pair</h2>
+  <div class="stat-grid">
+    <div class="stat-card"><div class="l">x median (q16, q84)</div><div class="v" id="xmed">—</div></div>
+    <div class="stat-card"><div class="l">y median (q16, q84)</div><div class="v" id="ymed">—</div></div>
+    <div class="stat-card"><div class="l">ρ(median) / ρ(peak)</div><div class="v" id="rho">—</div><div class="n" id="rhon">—</div></div>
+    <div class="stat-card"><div class="l">R−1 (chain)</div><div class="v" id="rminus1">—</div></div>
+  </div>
+</div>
+
+<div class="card">
+  <h2 style="margin-top:0;">Cross-branch at this parameter pair</h2>
+  <p class="muted">Same x/y you picked above, rendered for all three branches. Click a panel to make it the main view.</p>
+  <div class="mini-grid">
+    <div class="mini-card on b3a" data-mb="3a">
+      <div class="lbl">3a</div>
+      <div class="mini-plot" id="mini3a"></div>
+    </div>
+    <div class="mini-card b3b" data-mb="3b">
+      <div class="lbl">3b</div>
+      <div class="mini-plot" id="mini3b"></div>
+    </div>
+    <div class="mini-card b3c" data-mb="3c">
+      <div class="lbl">3c</div>
+      <div class="mini-plot" id="mini3c"></div>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="lesson" id="lesson">—</div>
+</div>
+
+<script>
+(function () {
+  const PLOT_BG = "#0d1117";
+  const TEXT    = "#e6edf3";
+  const MUTED   = "#8b949e";
+  const COLORS  = { "3a": "#155fa5", "3b": "#0f6e56", "3c": "#993c1d" };
+
+  let DATA = null;
+  let br = "3a";
+  let xk = "Omega_m";
+  let yk = "sigma8";
+
+  function lab(k) { return DATA.pretty[k] || k; }
+
+  function pairKey(a, b) {
+    // try both orientations
+    const k1 = `${a}__${b}`, k2 = `${b}__${a}`;
+    return [k1, k2];
+  }
+
+  function getKDE(branchData, x, y) {
+    const [k1, k2] = pairKey(x, y);
+    if (branchData.kde_2d[k1]) return { kde: branchData.kde_2d[k1], swap: false };
+    if (branchData.kde_2d[k2]) return { kde: branchData.kde_2d[k2], swap: true };
+    return null;
+  }
+
+  function unflatten(kde) {
+    const z = [];
+    for (let j = 0; j < kde.ny; j++) {
+      const row = new Array(kde.nx);
+      for (let i = 0; i < kde.nx; i++) row[i] = kde.grid[j * kde.nx + i];
+      z.push(row);
+    }
+    return z;
+  }
+
+  function xCoords(kde) {
+    const dx = (kde.xmax - kde.xmin) / (kde.nx - 1);
+    const out = new Array(kde.nx);
+    for (let i = 0; i < kde.nx; i++) out[i] = kde.xmin + i * dx;
+    return out;
+  }
+  function yCoords(kde) {
+    const dy = (kde.ymax - kde.ymin) / (kde.ny - 1);
+    const out = new Array(kde.ny);
+    for (let j = 0; j < kde.ny; j++) out[j] = kde.ymin + j * dy;
+    return out;
+  }
+
+  function credibleLevels(z, levels) {
+    const flat = [];
+    for (let j = 0; j < z.length; j++) for (let i = 0; i < z[j].length; i++) flat.push(z[j][i]);
+    const total = flat.reduce((a, b) => a + b, 0);
+    flat.sort((a, b) => b - a);
+    let cum = 0, li = 0;
+    const out = [];
+    for (let k = 0; k < flat.length && li < levels.length; k++) {
+      cum += flat[k];
+      if (cum >= levels[li] * total) { out.push(flat[k]); li++; }
+    }
+    while (out.length < levels.length) out.push(0);
+    return out;
+  }
+
+  function peakDensity(z) {
+    let m = 0;
+    for (let j = 0; j < z.length; j++) for (let i = 0; i < z[j].length; i++) if (z[j][i] > m) m = z[j][i];
+    return m;
+  }
+
+  function densityAt(kde, z, x, y) {
+    const dx = (kde.xmax - kde.xmin) / (kde.nx - 1);
+    const dy = (kde.ymax - kde.ymin) / (kde.ny - 1);
+    const i = Math.round((x - kde.xmin) / dx);
+    const j = Math.round((y - kde.ymin) / dy);
+    if (i < 0 || i >= kde.nx || j < 0 || j >= kde.ny) return 0;
+    return z[j][i];
+  }
+
+  function fmt(v) {
+    if (v == null || !isFinite(v)) return "—";
+    if (Math.abs(v) < 1e-9) return "0";
+    if (Math.abs(v) >= 100) return v.toFixed(0);
+    if (Math.abs(v) >= 10) return v.toFixed(1);
+    if (Math.abs(v) >= 1) return v.toFixed(2);
+    return v.toFixed(3);
+  }
+
+  function colorscaleFor(branch) {
+    // dark-to-branch ramp on the dark background
+    const c = COLORS[branch];
+    return [
+      [0.0,   "rgba(13,17,23,0)"],
+      [0.18,  "rgba(13,17,23,0)"],
+      [0.22,  c + "55"],
+      [0.50,  c + "99"],
+      [1.0,   c + "ff"],
+    ];
+  }
+
+  function renderMain() {
+    const branchData = DATA.branches[br];
+    const found = getKDE(branchData, xk, yk);
+    if (!found) {
+      Plotly.purge("mainplot");
+      document.getElementById("mainplot").innerHTML =
+        `<div style="padding:30px;color:${MUTED};">No precomputed KDE for ${lab(xk)} × ${lab(yk)}. Pick a different pair.</div>`;
+      return;
+    }
+    const kde = found.kde;
+    let z = unflatten(kde);
+    let xs = xCoords(kde), ys = yCoords(kde);
+    let xKey = xk, yKey = yk;
+    if (found.swap) {
+      // swap axes: transpose z, swap coords + labels
+      const zt = [];
+      for (let i = 0; i < z[0].length; i++) {
+        const row = new Array(z.length);
+        for (let j = 0; j < z.length; j++) row[j] = z[j][i];
+        zt.push(row);
+      }
+      z = zt;
+      [xs, ys] = [ys, xs];
+    }
+
+    const lv = credibleLevels(z, DATA.credible_levels);
+    const pmax = peakDensity(z);
+    const xmedRaw = branchData.stats_1d[xk].median;
+    const ymedRaw = branchData.stats_1d[yk].median;
+
+    const data = [
+      {
+        type: "contour", x: xs, y: ys, z: z,
+        colorscale: colorscaleFor(br), showscale: false,
+        contours: { start: lv[1], end: lv[0], size: (lv[0] - lv[1]) / 2 || 1 },
+        line: { color: COLORS[br], width: 1 },
+        hoverinfo: "skip",
+      },
+      {
+        type: "scatter", x: [xmedRaw], y: [ymedRaw], mode: "markers+text",
+        marker: { color: "#ffa657", size: 9, symbol: "circle-open", line: { width: 2 } },
+        text: ["median"], textposition: "top right", textfont: { color: "#ffa657", size: 11 },
+        hoverinfo: "skip", showlegend: false,
+      },
+    ];
+    const layout = {
+      paper_bgcolor: PLOT_BG, plot_bgcolor: PLOT_BG,
+      font: { color: TEXT, family: "-apple-system, Segoe UI, sans-serif", size: 12 },
+      margin: { l: 60, r: 20, t: 20, b: 50 },
+      xaxis: { title: lab(xKey), gridcolor: "#21262d", zerolinecolor: "#21262d" },
+      yaxis: { title: lab(yKey), gridcolor: "#21262d", zerolinecolor: "#21262d" },
+      showlegend: false,
+    };
+    Plotly.newPlot("mainplot", data, layout, { displaylogo: false, responsive: true });
+
+    // stats
+    const sx = branchData.stats_1d[xk], sy = branchData.stats_1d[yk];
+    document.getElementById("xmed").textContent = `${lab(xk)} = ${fmt(sx.median)}  (${fmt(sx.q16)}, ${fmt(sx.q84)})`;
+    document.getElementById("ymed").textContent = `${lab(yk)} = ${fmt(sy.median)}  (${fmt(sy.q16)}, ${fmt(sy.q84)})`;
+    const rho = pmax > 0 ? densityAt(kde, z, xmedRaw, ymedRaw) / pmax : 0;
+    document.getElementById("rho").textContent = rho.toFixed(2);
+    document.getElementById("rhon").textContent = rho < 0.5
+      ? "median in low-density region — skewed OR bimodal (KDE decides)"
+      : "median near a peak — geometry behaves";
+    document.getElementById("rminus1").textContent = branchData.R1.toFixed(3);
+
+    const lessonEl = document.getElementById("lesson");
+    lessonEl.className = "lesson l" + br;
+    lessonEl.textContent = LESSONS[br];
+  }
+
+  function renderMini(divId, branch) {
+    const branchData = DATA.branches[branch];
+    const found = getKDE(branchData, xk, yk);
+    if (!found) { Plotly.purge(divId); return; }
+    const kde = found.kde;
+    let z = unflatten(kde);
+    let xs = xCoords(kde), ys = yCoords(kde);
+    if (found.swap) {
+      const zt = [];
+      for (let i = 0; i < z[0].length; i++) {
+        const row = new Array(z.length);
+        for (let j = 0; j < z.length; j++) row[j] = z[j][i];
+        zt.push(row);
+      }
+      z = zt; [xs, ys] = [ys, xs];
+    }
+    const lv = credibleLevels(z, DATA.credible_levels);
+    const data = [{
+      type: "contour", x: xs, y: ys, z: z,
+      colorscale: colorscaleFor(branch), showscale: false,
+      contours: { start: lv[1], end: lv[0], size: (lv[0] - lv[1]) / 2 || 1 },
+      line: { color: COLORS[branch], width: 1 },
+      hoverinfo: "skip",
+    }];
+    const layout = {
+      paper_bgcolor: PLOT_BG, plot_bgcolor: PLOT_BG,
+      font: { color: TEXT, size: 10 },
+      margin: { l: 4, r: 4, t: 4, b: 4 },
+      xaxis: { visible: false }, yaxis: { visible: false },
+      showlegend: false,
+    };
+    Plotly.newPlot(divId, data, layout, { displaylogo: false, responsive: true, staticPlot: true });
+  }
+
+  const LESSONS = {
+    "3a": "Baseline. β = 0 fixed, so the posterior in (Ωₘ, h, σ₈) is a clean Gaussian. This is the reference geometry; whatever 3b and 3c do relative to this is what the new physics is asking for.",
+    "3b": "Non-crossing. β has a skewed unimodal posterior — set y = β and watch the 1D median drift well off the peak. ρ(median)/ρ(peak) drops, but the 2D KDE remains a single ridge, not two basins. This is exactly the §3.11 trap: indirect signals can't tell skewed-unimodal from bimodal. See the geometry-lesson page.",
+    "3c": "Crossing branch (B1-narrow). β is restricted to [2.65, 2.75] — inside the structurally-allowed window 3√3/2 < β < 2√3 (Eq. 96, Afterglow paper). The β marginal mirrors the prior; the data does not pick a value within the window.",
+  };
+
+  function setBranch(b) {
+    br = b;
+    document.querySelectorAll("button.bsel").forEach(btn => {
+      btn.classList.toggle("on", btn.dataset.br === b);
+    });
+    document.querySelectorAll(".mini-card").forEach(c => {
+      c.classList.toggle("on", c.dataset.mb === b);
+    });
+    renderAll();
+  }
+
+  function renderAll() {
+    renderMain();
+    renderMini("mini3a", "3a");
+    renderMini("mini3b", "3b");
+    renderMini("mini3c", "3c");
+  }
+
+  function populateSelectors() {
+    const sx = document.getElementById("xkey");
+    const sy = document.getElementById("ykey");
+    DATA.params.forEach(p => {
+      const o1 = document.createElement("option");
+      o1.value = p; o1.textContent = lab(p);
+      const o2 = o1.cloneNode(true);
+      sx.appendChild(o1); sy.appendChild(o2);
+    });
+    sx.value = xk; sy.value = yk;
+    sx.addEventListener("change", e => { xk = e.target.value; renderAll(); });
+    sy.addEventListener("change", e => { yk = e.target.value; renderAll(); });
+  }
+
+  function wireBranchButtons() {
+    document.querySelectorAll("button.bsel").forEach(btn => {
+      btn.addEventListener("click", () => setBranch(btn.dataset.br));
+    });
+    document.querySelectorAll(".mini-card").forEach(c => {
+      c.addEventListener("click", () => setBranch(c.dataset.mb));
+    });
+  }
+
+  fetch("chains_summary.json")
+    .then(r => r.json())
+    .then(json => {
+      DATA = json;
+      populateSelectors();
+      wireBranchButtons();
+      renderAll();
+    })
+    .catch(err => {
+      document.getElementById("mainplot").innerHTML =
+        `<div style="color:#f0997b;padding:20px;">Failed to load chains_summary.json: ${err.message}<br><span style="color:${MUTED};font-size:13px;">Are you viewing this through GitHub Pages or a local web server? Direct file:// access blocks fetch().</span></div>`;
+    });
+})();
+</script>
+
+</body>
+</html>
