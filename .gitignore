@@ -12,3 +12,8 @@ class
 python/build/
 python/classy.c
 .DS_Store
+
+# MCMC raw chains — 100s of MB per .txt, over GitHub's 100 MB limit.
+# Commit chains_summary.json (at repo root) instead; ship raw chains via
+# GitHub Releases / Git LFS / Zenodo, not normal git push.
+chains/

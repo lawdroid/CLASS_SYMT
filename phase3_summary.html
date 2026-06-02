@@ -147,11 +147,15 @@
     // Banner
     const banner = document.getElementById("data-source-banner");
     if (banner && isReal) {
+      const isFullyClean = !src.includes("missing") && !src.includes("snapshot") && !src.includes("offline");
+      const stripeColor  = isFullyClean ? "#2ea043" : "#d29922";
+      const bgColor      = isFullyClean ? "#082a17" : "#2a1f05";
+      const textColor    = isFullyClean ? "#7ee2a8" : "#f1cf94";
       banner.classList.remove("warn");
-      banner.style.cssText = "background:#082a17;border-left:3px solid #2ea043;padding:10px 14px;border-radius:4px;color:#7ee2a8;font-size:14px;";
-      banner.innerHTML = "Data on this page is from <strong>real Phase 3 chains</strong> (" +
-        (j.generated_utc || "unknown timestamp") + "). Source: <code>mcmc/export_chains_summary.py</code>." +
-        (src.includes("missing") ? " <em>Note: " + j.data_source + "</em>" : "");
+      banner.style.cssText = `background:${bgColor};border-left:3px solid ${stripeColor};padding:10px 14px;border-radius:4px;color:${textColor};font-size:14px;`;
+      banner.innerHTML = "Data: <strong>" + j.data_source + "</strong> &middot; generated " +
+        (j.generated_utc || "unknown timestamp") + " &middot; source: <code>mcmc/export_chains_summary.py</code>" +
+        (isFullyClean ? "" : " <em>(partial — see data_source for details).</em>");
     }
 
     // Pending numbers
