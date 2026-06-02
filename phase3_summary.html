@@ -38,8 +38,8 @@
 <h1>Phase 3 — posterior summary</h1>
 <p class="muted">Three pre-registered branches of the Martin–Koh Yang-Mills afterglow framework against current data. This page is the abstract; see the explorer for interactive 2D KDEs and the YM-anchor page for the equations behind the branch boundaries.</p>
 
-<div class="warn">
-  Data on this page is currently from <strong>mock samples</strong> (see <code>mcmc/gen_chains_summary_mock.py</code>). Replace <code>chains_summary.json</code> with output from the real-chain export script once available.
+<div id="data-source-banner" class="warn">
+  Data on this page is currently from <strong>mock samples</strong> (see <code>mcmc/gen_chains_summary_mock.py</code>). Replace <code>chains_summary.json</code> with output from <code>mcmc/export_chains_summary.py</code> once real chains have been fetched.
 </div>
 
 <div class="card">
@@ -119,18 +119,73 @@
 </ul>
 </div>
 
-<details>
+<details id="pending-details" open>
 <summary>Three placeholder slots awaiting computation (task #7 / P1)</summary>
 <div class="row">
-  <div><div class="lbl">β 95% CI (3b, lower bound)</div><div class="num">— pending —</div></div>
-  <div><div class="lbl">log Z (3a)</div><div class="num">— pending —</div></div>
-  <div><div class="lbl">log Z (3b)</div><div class="num">— pending —</div></div>
+  <div><div class="lbl">β 95% CI (3b, lower bound)</div><div class="num" id="slot-beta-lower">— pending —</div></div>
+  <div><div class="lbl">log Z (3a)</div><div class="num" id="slot-logz-3a">— pending —</div></div>
+  <div><div class="lbl">log Z (3b)</div><div class="num" id="slot-logz-3b">— pending —</div></div>
 </div>
 <div class="row" style="margin-top:8px;">
-  <div><div class="lbl">Δ log Z (3b − ΛCDM)</div><div class="num">— pending —</div></div>
+  <div><div class="lbl">Δ log Z (3b − ΛCDM)</div><div class="num" id="slot-delta-logz">— pending —</div></div>
 </div>
-<p class="muted">These three numbers are the gating items for paper finalization. The β CI is a direct read off the 3b chain; log Z requires MCEvidence or a nested-sampling rerun; Δ log Z requires a fresh ΛCDM chain under the same likelihood stack.</p>
+<p class="muted" id="pending-caveat">These three numbers are the gating items for paper finalization. The β CI is a direct read off the 3b chain; log Z requires MCEvidence or a nested-sampling rerun; Δ log Z requires a fresh ΛCDM chain under the same likelihood stack.</p>
 </details>
+
+<script>
+// Auto-populate from chains_summary.json. Works when served (localhost:8000);
+// will silently no-op when opened via file:// due to fetch CORS — that's fine,
+// the static "— pending —" placeholders remain visible.
+(async () => {
+  try {
+    const res = await fetch("chains_summary.json", {cache: "no-store"});
+    if (!res.ok) return;
+    const j = await res.json();
+    const src = (j.data_source || "").toLowerCase();
+    const isReal = src.includes("real") && !src.includes("mock");
+
+    // Banner
+    const banner = document.getElementById("data-source-banner");
+    if (banner && isReal) {
+      banner.classList.remove("warn");
+      banner.style.cssText = "background:#082a17;border-left:3px solid #2ea043;padding:10px 14px;border-radius:4px;color:#7ee2a8;font-size:14px;";
+      banner.innerHTML = "Data on this page is from <strong>real Phase 3 chains</strong> (" +
+        (j.generated_utc || "unknown timestamp") + "). Source: <code>mcmc/export_chains_summary.py</code>." +
+        (src.includes("missing") ? " <em>Note: " + j.data_source + "</em>" : "");
+    }
+
+    // Pending numbers
+    const p = j.pending_numbers || {};
+    const fmt = (v, digits=3) => (v === null || v === undefined) ? "— pending —" : Number(v).toFixed(digits);
+    const setSlot = (id, val, prefix="") => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      if (val === null || val === undefined) { el.textContent = "— pending —"; return; }
+      el.textContent = prefix + Number(val).toFixed(3);
+      el.style.color = "#7ee2a8";
+    };
+    setSlot("slot-beta-lower", p.beta_lower95_3b);
+    setSlot("slot-logz-3a",    p.logZ_3a);
+    setSlot("slot-logz-3b",    p.logZ_3b);
+    setSlot("slot-delta-logz", p.delta_logZ_3b_vs_lcdm);
+
+    // Caveat update once real data lands
+    const caveat = document.getElementById("pending-caveat");
+    if (caveat && isReal) {
+      const stillPending = ["beta_lower95_3b","logZ_3a","logZ_3b","delta_logZ_3b_vs_lcdm"]
+        .filter(k => p[k] === null || p[k] === undefined);
+      if (stillPending.length === 0) {
+        caveat.textContent = "All four gating numbers populated from real chains. Note: the 3b β lower bound is prior-dominated (flat likelihood), so it reflects the prior edge, not a data constraint.";
+      } else {
+        caveat.textContent = "Still pending: " + stillPending.join(", ") +
+          ". Most likely cause: MCEvidence not installed (logZ_*) or no ΛCDM reference chain at chains/lcdm_reference/ (delta_logZ).";
+      }
+    }
+  } catch (e) {
+    // file:// or json missing — leave placeholders alone
+  }
+})();
+</script>
 
 <hr style="border:none; border-top:1px solid #30363d; margin: 30px 0;">
 
