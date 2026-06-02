@@ -79,7 +79,7 @@ if ($Mode -eq 'rclone') {
         $src = "chains\$($branches[$br])"
         $dst = "${RcloneRemote}:/${branches[$br]}"
         Write-Host ""
-        Write-Host "==> Uploading $br: $src  ->  $dst" -ForegroundColor Green
+        Write-Host "==> Uploading ${br}: $src  ->  $dst" -ForegroundColor Green
         # Filter to chain artifacts only; skip locks
         rclone copy `
             --drive-root-folder-id $RcloneFolderId `
@@ -115,7 +115,7 @@ if ($Mode -eq 'desktop-sync') {
         $src = "chains\$($branches[$br])"
         $dst = Join-Path $target $branches[$br]
         New-Item -ItemType Directory -Path $dst -Force | Out-Null
-        Write-Host "==> Copying $br: $src  ->  $dst"
+        Write-Host "==> Copying ${br}: $src  ->  $dst"
         Copy-Item -Path "$src\*" -Destination $dst -Recurse -Force -Exclude "*.locked"
     }
     Write-Host ""
