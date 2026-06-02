@@ -1,0 +1,68 @@
+{
+  "method": "Heavens 2017 k-NN evidence (arXiv:1704.03472)",
+  "k": 5,
+  "burn_frac": 0.3,
+  "branches": {
+    "3a": {
+      "log_Z": -6219.38001554329,
+      "stderr": 0.048487174063666316,
+      "n_eff": 387112.71711419476,
+      "d_sampled": 7,
+      "sampled_params": [
+        "H0",
+        "omega_b",
+        "omega_cdm",
+        "tau_reio",
+        "logA",
+        "n_s",
+        "log10_c_D"
+      ]
+    },
+    "3b": {
+      "log_Z": -6219.563202934105,
+      "stderr": 0.020176978551717184,
+      "n_eff": 581128.1640600548,
+      "d_sampled": 8,
+      "sampled_params": [
+        "H0",
+        "omega_b",
+        "omega_cdm",
+        "tau_reio",
+        "logA",
+        "n_s",
+        "log10_c_D",
+        "beta_aft"
+      ]
+    },
+    "3c": {
+      "log_Z": -6219.902513645829,
+      "stderr": 0.028670356771272054,
+      "n_eff": 1013845.6291290649,
+      "d_sampled": 8,
+      "sampled_params": [
+        "H0",
+        "omega_b",
+        "omega_cdm",
+        "tau_reio",
+        "logA",
+        "n_s",
+        "log10_c_D",
+        "beta_aft"
+      ]
+    }
+  },
+  "deltas": {
+    "3b_minus_3a": {
+      "delta_logZ": -0.1831873908149646,
+      "stderr": 0.052517773297777307
+    },
+    "3c_minus_3a": {
+      "delta_logZ": -0.5224981025385205,
+      "stderr": 0.056329347644654124
+    },
+    "3c_minus_3b": {
+      "delta_logZ": -0.33931071172355587,
+      "stderr": 0.03505851994691848
+    }
+  }
+}

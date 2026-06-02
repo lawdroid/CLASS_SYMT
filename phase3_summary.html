@@ -127,9 +127,11 @@
   <div><div class="lbl">log Z (3b)</div><div class="num" id="slot-logz-3b">— pending —</div></div>
 </div>
 <div class="row" style="margin-top:8px;">
+  <div><div class="lbl">log Z (3c) — bonus</div><div class="num" id="slot-logz-3c">— pending —</div></div>
+  <div><div class="lbl">Δ log Z (3b − 3a) — flat-β cross-check</div><div class="num" id="slot-delta-3b-3a">— pending —</div></div>
   <div><div class="lbl">Δ log Z (3b − ΛCDM)</div><div class="num" id="slot-delta-logz">— pending —</div></div>
 </div>
-<p class="muted" id="pending-caveat">These three numbers are the gating items for paper finalization. The β CI is a direct read off the 3b chain; log Z requires MCEvidence or a nested-sampling rerun; Δ log Z requires a fresh ΛCDM chain under the same likelihood stack.</p>
+<p class="muted" id="pending-caveat">Status: <span id="pending-status">computing…</span></p>
 </details>
 
 <script>
@@ -168,22 +170,52 @@
       el.textContent = prefix + Number(val).toFixed(3);
       el.style.color = "#7ee2a8";
     };
+    const setLogZ = (id, val, err) => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      if (val === null || val === undefined) { el.textContent = "— pending —"; return; }
+      el.textContent = Number(val).toFixed(2) + (err ? " ± " + Number(err).toFixed(2) : "");
+      el.style.color = "#7ee2a8";
+    };
+    const setDelta = (id, val, err) => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      if (val === null || val === undefined) { el.textContent = "— pending —"; return; }
+      const sign = val >= 0 ? "+" : "";
+      el.textContent = sign + Number(val).toFixed(2) + (err ? " ± " + Number(err).toFixed(2) : "");
+      el.style.color = "#7ee2a8";
+    };
     setSlot("slot-beta-lower", p.beta_lower95_3b);
-    setSlot("slot-logz-3a",    p.logZ_3a);
-    setSlot("slot-logz-3b",    p.logZ_3b);
-    setSlot("slot-delta-logz", p.delta_logZ_3b_vs_lcdm);
+    setLogZ("slot-logz-3a",    p.logZ_3a, p.logZ_3a_stderr);
+    setLogZ("slot-logz-3b",    p.logZ_3b, p.logZ_3b_stderr);
+    setLogZ("slot-logz-3c",    p.logZ_3c, p.logZ_3c_stderr);
+    const d = (p.evidence_deltas && p.evidence_deltas["3b_minus_3a"]) || {};
+    setDelta("slot-delta-3b-3a", d.delta_logZ, d.stderr);
+    setDelta("slot-delta-logz", p.delta_logZ_3b_vs_lcdm);
 
     // Caveat update once real data lands
-    const caveat = document.getElementById("pending-caveat");
-    if (caveat && isReal) {
-      const stillPending = ["beta_lower95_3b","logZ_3a","logZ_3b","delta_logZ_3b_vs_lcdm"]
+    const status = document.getElementById("pending-status");
+    if (status && isReal) {
+      const stillPending = ["delta_logZ_3b_vs_lcdm"]
         .filter(k => p[k] === null || p[k] === undefined);
-      if (stillPending.length === 0) {
-        caveat.textContent = "All four gating numbers populated from real chains. Note: the 3b β lower bound is prior-dominated (flat likelihood), so it reflects the prior edge, not a data constraint.";
-      } else {
-        caveat.textContent = "Still pending: " + stillPending.join(", ") +
-          ". Most likely cause: MCEvidence not installed (logZ_*) or no ΛCDM reference chain at chains/lcdm_reference/ (delta_logZ).";
+      let parts = [];
+      if (p.logZ_3a !== null && p.logZ_3b !== null) {
+        parts.push("log Z computed via " + (p.evidence_method || "k-NN estimator") + ".");
       }
+      if (d.delta_logZ !== null && d.delta_logZ !== undefined) {
+        const consistent = Math.abs(d.delta_logZ) < 2 * (d.stderr || 0.5);
+        parts.push("Δ log Z (3b − 3a) = " + (d.delta_logZ>=0?"+":"") + d.delta_logZ.toFixed(2) +
+                   " is " + (consistent ? "consistent with zero" : "non-zero") +
+                   " — " + (consistent ? "corroborates the flat-β finding (β buys no likelihood improvement, so Bayes' rule predicts ΔlogZ ≈ 0)." : "warrants investigation."));
+      }
+      if (stillPending.length > 0) {
+        parts.push("Still pending: " + stillPending.join(", ") +
+          " (needs fresh ΛCDM chain under same likelihood stack — ~12–24 h runtime on Ubuntu workstation).");
+      } else {
+        parts.push("All gating numbers populated.");
+      }
+      parts.push("Note: the 3b β lower bound 0.053 is prior-dominated (q025 of a flat marginal), not a data constraint.");
+      status.innerHTML = parts.join(" ");
     }
   } catch (e) {
     // file:// or json missing — leave placeholders alone
