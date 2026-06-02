@@ -10,7 +10,7 @@
 #   .\mcmc\wait_and_fetch_3c.ps1 -PollSeconds 15 -MaxAttempts 480   # 2 hours
 
 param(
-    [string]$Host      = "192.168.200.115",
+    [string]$Host      = "192.168.200.173",
     [string]$User      = "ingko",
     [string]$RemotePath= "/Volumes/AppsSSD/MCMC/CLASS_SYMT/chains/phase3c_b1narrow",
     [int]$PollSeconds  = 15,

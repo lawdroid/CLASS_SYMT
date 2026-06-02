@@ -11,7 +11,7 @@
 # blocks ssh to 192.168.200.*; Windows-side ssh works.
 #
 # Prerequisites:
-#   - passwordless ssh to i@192.168.200.119 and ingko@192.168.200.115
+#   - passwordless ssh to i@192.168.200.119 and ingko@192.168.200.173
 #   - python on PATH with: numpy, pandas (only used if MCEvidence is installed)
 #   - optional: pip install MCEvidence  (for logZ_3a, logZ_3b populated)
 #   - optional: chains/lcdm_reference/ exists (for delta_logZ_3b_vs_lcdm)
@@ -27,7 +27,7 @@ Write-Host ""
 $paths = @{
     "phase3a_baseline"     = "i@192.168.200.119:/media/i/storage/CLASS_SYMT/chains/phase3a_baseline"
     "phase3b_noncrossing"  = "i@192.168.200.119:/media/i/storage/CLASS_SYMT/chains/phase3b_noncrossing"
-    "phase3c_b1narrow"     = "ingko@192.168.200.115:/Volumes/AppsSSD/MCMC/CLASS_SYMT/chains/phase3c_b1narrow"
+    "phase3c_b1narrow"     = "ingko@192.168.200.173:/Volumes/AppsSSD/MCMC/CLASS_SYMT/chains/phase3c_b1narrow"
 }
 
 foreach ($name in $paths.Keys) {
