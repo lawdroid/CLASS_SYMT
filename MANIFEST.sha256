@@ -1,0 +1,39 @@
+# MANIFEST.sha256 — Phase 3 raw MCMC chains
+# Generated: 2026-06-02
+# Repo: github.com/ingyukoh/CLASS_SYMT (private), branch phase3-interactive
+# Verify (Windows): Get-FileHash <file> -Algorithm SHA256
+# Verify (Linux/Mac): sha256sum -c MANIFEST.sha256
+#
+# Branch         n_weighted    R-1
+# phase3a        505327         0.0013
+# phase3b        764257         0.0002
+# phase3c       1250840         0.0004
+#
+8efa23de27b41f12fea8e09c77e63fdea614111d85da5cce48f38bbab06c92d8  phase3a_baseline/afterglow_3a.1.txt
+27c87dafed7defd16bccf0be9b26bde7699d7d2d30642010730b7570acddade5  phase3a_baseline/afterglow_3a.2.txt
+82c091b16b7a5f693519db2352f571144a995f1d5430534869c6d57bd514c7c1  phase3a_baseline/afterglow_3a.3.txt
+fe999a129aa25a144284739711ae6d5db77eaf19828b8558f7d1b841587aa6d4  phase3a_baseline/afterglow_3a.4.txt
+47fe5909e5043f8665ab3f6cad5e2557c2d35440eb6c0d0d0bae8ab3f37dfe34  phase3a_baseline/afterglow_3a.checkpoint
+827509a8604ce04c66f503269b115c01a73d6eadcf31017f7c96b04ac16f35bb  phase3a_baseline/afterglow_3a.covmat
+1c9ea1f8250ba99c8e73acb710a5f48201738e22c108ef46309b3904affc7ecb  phase3a_baseline/afterglow_3a.input.yaml
+e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855  phase3a_baseline/afterglow_3a.input.yaml.locked
+77b4ecf30efbe365809d20fe577f0e1c1a17222c545c3b68484a9546bc6731d7  phase3a_baseline/afterglow_3a.progress
+ce32076252d043625bfa3e1ac47d0f0dd80ca87e60ad5e32ce03c8962aacdd13  phase3a_baseline/afterglow_3a.updated.yaml
+46bcad40ad78c6c073cc33e6130d70577e43dcdf8a34747bdb5f7e23a49c7adf  phase3b_noncrossing/afterglow_3b.1.txt
+dd7bc54829ca83a827288710fb006150046a34c3babcc83f27af4f130db73712  phase3b_noncrossing/afterglow_3b.2.txt
+2c3ff58cfff35ab579da555e55682f52f4b3007d002f49a3bd8e54b1727a002f  phase3b_noncrossing/afterglow_3b.3.txt
+d2ac2ac074785af715ae01eca55c362bfd01905df3387a82dd3f86f434aa3b99  phase3b_noncrossing/afterglow_3b.4.txt
+b6e459a779b31b2563dcc1a3ca25fdba3b6e904e93731a946ea29c5483f655d8  phase3b_noncrossing/afterglow_3b.checkpoint
+a22406b4e153a7a3dae9746155ce8d8b3a92d9ad77eaeb884bb91abaa390a0d4  phase3b_noncrossing/afterglow_3b.covmat
+19f3f2f03b424de401aaa0e0da0941ca7c631f4dfbc703ca768bc2f807815ed1  phase3b_noncrossing/afterglow_3b.input.yaml
+ea58e4f1bfd8300feaea4e2ebe0e083c9815e4265f8920c5058a0cf27563fe68  phase3b_noncrossing/afterglow_3b.progress
+770af40cd27d2ebab19ce5bc312ae4e6a4b79146237e4528832fe768c14782a0  phase3b_noncrossing/afterglow_3b.updated.yaml
+988333dbd7a7847136da762257b6708289cdf18183be09fe572da38fb0e328ef  phase3c_b1narrow/afterglow_3c.1.txt
+29f22a9db79dc5ddc35bd1ce11d8d6524992ac47d5529a4bff2c6354227823b6  phase3c_b1narrow/afterglow_3c.2.txt
+20c51d84c3acc62d5b56cc20539d4156e17d2cf661100e9ced5e89ef23619628  phase3c_b1narrow/afterglow_3c.3.txt
+72ef493e504b071261afc9dc928603135fba7482c66a03a55502e259f1aa74d1  phase3c_b1narrow/afterglow_3c.4.txt
+394713eaa046d847afc27505b7d7aac7a94093fef6963df5fc917dcf2b0b0bf3  phase3c_b1narrow/afterglow_3c.checkpoint
+974e7142c121563003fb022294d750063d9fe68162e995bb6cde3eb517bc5c4d  phase3c_b1narrow/afterglow_3c.covmat
+7246b2fabbb3c81daa8435238034c5e4b8569824033e59d57c28ada233c7fa86  phase3c_b1narrow/afterglow_3c.input.yaml
+3d4c05c78bef828a8f3da9f35726900779bd2a90c677b151b4d48f000138fe92  phase3c_b1narrow/afterglow_3c.progress
+9a9067758d7d01daef636ca49e5f852890c661424b32c3aad9fb2b4d20ed555c  phase3c_b1narrow/afterglow_3c.updated.yaml
