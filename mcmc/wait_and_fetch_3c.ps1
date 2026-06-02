@@ -10,7 +10,7 @@
 #   .\mcmc\wait_and_fetch_3c.ps1 -PollSeconds 15 -MaxAttempts 480   # 2 hours
 
 param(
-    [string]$Host      = "192.168.200.173",
+    [string]$RemoteHost      = "192.168.200.173",
     [string]$User      = "ingko",
     [string]$RemotePath= "/Volumes/AppsSSD/MCMC/CLASS_SYMT/chains/phase3c_b1narrow",
     [int]$PollSeconds  = 15,
@@ -25,7 +25,7 @@ New-Item -ItemType Directory -Path $localDir -Force | Out-Null
 
 Write-Host ""
 Write-Host "==> wait_and_fetch_3c"
-Write-Host "    target: $User@${Host}:$RemotePath"
+Write-Host "    target: $User@${RemoteHost}:$RemotePath"
 Write-Host "    local : $root\$localDir"
 Write-Host "    poll  : every $PollSeconds s, up to $MaxAttempts attempts"
 Write-Host ""
@@ -38,13 +38,13 @@ $reachable = $false
 while ($attempt -lt $MaxAttempts -and -not $reachable) {
     $attempt++
     # WarningAction silences the noisy "TCP connect failed" yellow text on each miss
-    $result = Test-NetConnection $Host -Port 22 -WarningAction SilentlyContinue
+    $result = Test-NetConnection $RemoteHost -Port 22 -WarningAction SilentlyContinue
     if ($result.TcpTestSucceeded) {
         $reachable = $true
-        Write-Host "[$attempt/$MaxAttempts] $Host:22 REACHABLE — fetching" -ForegroundColor Green
+        Write-Host "[$attempt/$MaxAttempts] $RemoteHost:22 REACHABLE — fetching" -ForegroundColor Green
     } else {
         $stamp = Get-Date -Format 'HH:mm:ss'
-        Write-Host "[$attempt/$MaxAttempts $stamp] $Host:22 unreachable ($($result.PingReplyDetails.Status)) — retry in ${PollSeconds}s"
+        Write-Host "[$attempt/$MaxAttempts $stamp] $RemoteHost:22 unreachable ($($result.PingReplyDetails.Status)) — retry in ${PollSeconds}s"
         Start-Sleep -Seconds $PollSeconds
     }
 }
@@ -60,8 +60,8 @@ if (-not $reachable) {
 }
 
 Write-Host ""
-Write-Host "==> scp -r $User@${Host}:$RemotePath/* $localDir\"
-scp -r -p "${User}@${Host}:${RemotePath}/*" $localDir
+Write-Host "==> scp -r $User@${RemoteHost}:$RemotePath/* $localDir\"
+scp -r -p "${User}@${RemoteHost}:${RemotePath}/*" $localDir
 if ($LASTEXITCODE -ne 0) {
     Write-Host "scp failed with exit code $LASTEXITCODE" -ForegroundColor Red
     exit $LASTEXITCODE
