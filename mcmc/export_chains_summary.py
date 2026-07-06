@@ -289,7 +289,7 @@ def main():
             missing_branches.append(br)
             continue
         samples, weights = build_samples(br, chain)
-        print(f"   {len(samples)} weighted samples")
+        print(f"   {len(samples)} accepted states (rows; multiplicity weights not summed)")
 
         R1 = gelman_rubin(chain_dir, cfg["chain_glob"], "c_D", args.burn_frac)
         branch_data = {
