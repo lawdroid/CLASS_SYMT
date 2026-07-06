@@ -1,0 +1,48 @@
+CLASS_SYMT licensing
+====================
+
+This repository contains two bodies of work.
+
+1. CLASS (Cosmic Linear Anisotropy Solving System)
+   Copyright (c) Julien Lesgourgues, Thomas Tram, Nils Schoeneberg,
+   and contributors.
+
+   The unmodified portions of this repository are the public CLASS code
+   (https://github.com/lesgourg/class_public), distributed by its
+   authors without a formal license under the following terms, which
+   apply here unchanged: CLASS may be used freely, provided that
+   publications using it cite at least "CLASS II: Approximation
+   schemes", D. Blas, J. Lesgourgues, and T. Tram, JCAP 07 (2011) 034,
+   arXiv:1104.2933. All rights in the original CLASS code remain with
+   its authors.
+
+2. CLASS_SYMT modifications (the afterglow memory species)
+   Copyright (c) 2025-2026 Thomas Glenn Martin and In-Gyu Koh.
+
+   The modifications comprise the afterglow background and perturbation
+   modules, the associated input handling, the unit suite
+   (test/test_afterglow_bg.py, test/test_afterglow_pt.py), and the
+   accompanying documentation. These modifications are released under
+   the MIT License:
+
+   Permission is hereby granted, free of charge, to any person
+   obtaining a copy of this software and associated documentation files
+   (the "Software"), to deal in the Software without restriction,
+   including without limitation the rights to use, copy, modify, merge,
+   publish, distribute, sublicense, and/or sell copies of the Software,
+   and to permit persons to whom the Software is furnished to do so,
+   subject to the following conditions: The above copyright notice and
+   this permission notice shall be included in all copies or
+   substantial portions of the Software. THE SOFTWARE IS PROVIDED
+   "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING
+   BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
+   PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+   AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
+   OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+   OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE
+   OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+   If you use CLASS_SYMT in a publication, please cite T. G. Martin and
+   I. Koh, "Afterglow Dark Energy: Apparent Phantom Crossing from
+   Hidden Confinement, Tested Against Planck, DESI DR2, and Pantheon+",
+   arXiv:[XXXX.XXXXX], together with the CLASS II paper above.
