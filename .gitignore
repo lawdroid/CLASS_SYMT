@@ -17,3 +17,4 @@ python/classy.c
 # Commit chains_summary.json (at repo root) instead; ship raw chains via
 # GitHub Releases / Git LFS / Zenodo, not normal git push.
 chains/
+.claude/
