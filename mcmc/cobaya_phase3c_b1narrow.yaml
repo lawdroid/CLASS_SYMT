@@ -1,0 +1,149 @@
+# ==============================================================
+# Cobaya Phase 3c — B1-narrow gate, beta in [2.65, 2.75]
+# CLASS_SYMT afterglow dark energy (Martin & Koh April 2026)
+#
+# B1-narrow variant of 3c, per Tom's 5/7 message options.
+# beta prior trimmed from original [2.65, 3.40] down to just
+# below the B1 regulator activation (beta ~ 2.75), so the
+# posterior is dominated by data, not by regulator damping.
+#
+# Pre-registered prediction (Reply email decision 6):
+#   w_eff dip ~10^-2 below -1 in z in [0.5, 2].
+#   Intrinsic w_X stays >= -1 (hard floor).
+#
+# Hardware: Mac mini M4 (Ingui-Macmini), 10 cores, /Volumes/AppsSSD/MCMC.
+# Run on mac mini to avoid contention with Ubuntu's 3a + 3b.
+# Pending Tom's final B1 / B3 / Drop confirmation from 5/7 message.
+# ==============================================================
+
+theory:
+  afterglow_theory.AfterglowTheory:
+    python_path: ./mcmc
+    extra_args:
+      output: "tCl,pCl,lCl,mPk"
+      l_max_scalars: 2508
+      lensing: "yes"
+      non_linear: "halofit"
+      afterglow_on: 1
+      cs2_X: 0.5
+      tol_background_integration: 1.0e-5
+      tol_perturbations_integration: 1.0e-5
+      z_max_pk: 1.0
+      bp_regulator: 0.1
+
+likelihood:
+  planck_NPIPE_highl_CamSpec.TTTEEE:
+  planck_2018_lowl.TT:
+  planck_2018_lowl.EE_sroll2:
+  planck_2018_lensing.native:
+  bao.desi_dr2:
+  sn.pantheonplus:
+    use_abs_mag: False
+
+params:
+  H0:
+    prior: {min: 55.0, max: 85.0}
+    ref:   {dist: norm, loc: 67.4, scale: 1.0}
+    proposal: 0.5
+    latex: H_0
+  omega_b:
+    prior: {min: 0.019, max: 0.025}
+    ref:   {dist: norm, loc: 0.02237, scale: 0.0002}
+    proposal: 0.0001
+    latex: \Omega_\mathrm{b} h^2
+  omega_cdm:
+    prior: {min: 0.10, max: 0.15}
+    ref:   {dist: norm, loc: 0.1200, scale: 0.001}
+    proposal: 0.0005
+    latex: \Omega_\mathrm{cdm} h^2
+  tau_reio:
+    prior: {min: 0.01, max: 0.10}
+    ref:   {dist: norm, loc: 0.0543, scale: 0.008}
+    proposal: 0.005
+    latex: \tau_\mathrm{reio}
+  logA:
+    prior: {min: 2.5, max: 3.5}
+    ref:   {dist: norm, loc: 3.044, scale: 0.014}
+    proposal: 0.005
+    latex: \ln 10^{10} A_\mathrm{s}
+    drop: True
+  A_s:
+    value: "lambda logA: 1e-10 * np.exp(logA)"
+    latex: A_\mathrm{s}
+  n_s:
+    prior: {min: 0.92, max: 1.00}
+    ref:   {dist: norm, loc: 0.965, scale: 0.004}
+    proposal: 0.003
+    latex: n_\mathrm{s}
+
+  log10_c_D:
+    prior: {min: 0.7, max: 2.0}
+    ref:   {dist: norm, loc: 1.0, scale: 0.2}
+    proposal: 0.1
+    latex: \log_{10} c_D
+    drop: True
+  c_D:
+    value: "lambda log10_c_D: 10 ** log10_c_D"
+    latex: c_D
+
+  # 3c B1-narrow strip: beta restricted to just below B1 regulator threshold
+  beta_aft:
+    prior: {min: 2.65, max: 2.75}
+    ref:   {dist: norm, loc: 2.70, scale: 0.025}
+    proposal: 0.01
+    latex: \beta
+
+  # Late-branch guard: c_D > (1 + 4 beta) / 3
+  # At beta = 2.70: requires c_D > 11.8/3 ~ 3.93; so log10_c_D > ~0.595
+  # Our log10_c_D prior min is 0.7, so the guard is active near boundary.
+  late_branch_guard:
+    derived: "lambda c_D, beta_aft: c_D - (1.0 + 4.0 * beta_aft) / 3.0"
+    prior: {min: 0.0, max: 1.0e10}
+    drop: True
+
+  # ---------- derived predictions ----------
+  w_X:
+    derived: "lambda c_D: -1.0 + 1.0 / (3.0 * c_D)"
+    latex: w_X
+  Omega_m:
+    latex: \Omega_\mathrm{m}
+  sigma8:
+    latex: \sigma_8
+  sigma8_at_z0p1:
+    derived: True
+    latex: \sigma_8(z=0.1)
+  sigma8_at_z0p3:
+    derived: True
+    latex: \sigma_8(z=0.3)
+  sigma8_at_z0p5:
+    derived: True
+    latex: \sigma_8(z=0.5)
+  fsigma8_at_z0p1:
+    derived: True
+    latex: f\sigma_8(z=0.1)
+  fsigma8_at_z0p3:
+    derived: True
+    latex: f\sigma_8(z=0.3)
+  fsigma8_at_z0p5:
+    derived: True
+    latex: f\sigma_8(z=0.5)
+  # NOTE: w_eff_z* (effective phantom-mimicry diagnostics) removed —
+  # those derived params are listed in the legacy 3c yaml but never
+  # actually implemented in CLASS_SYMT/AfterglowTheory. Adding them
+  # back requires code work in source/afterglow/ and mcmc/afterglow_theory.py.
+
+sampler:
+  mcmc:
+    Rminus1_stop: 0.01
+    Rminus1_cl_stop: 0.05
+    max_samples: 500000
+    learn_proposal: True
+    learn_proposal_Rminus1_max: 2.0
+    covmat: auto
+    output_every: 60s
+
+output: chains/phase3c_b1narrow/afterglow_3c
+resume: True
+force: False
+debug: False
+packages_path: ./cobaya_packages

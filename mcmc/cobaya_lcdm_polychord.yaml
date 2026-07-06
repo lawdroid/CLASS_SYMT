@@ -1,0 +1,90 @@
+# ==============================================================
+# Cobaya LCDM reference — Bayesian evidence (log Z) via PolyChord
+# Same data stack as Phase 3 (Planck NPIPE + DESI DR2 + Pantheon+).
+# Purpose: the LCDM reference Z for  Delta log Z (afterglow - LCDM).
+#
+# Uses STOCK classy (true LCDM); the afterglow wrapper hardcodes
+# afterglow_on=yes and is therefore not the right LCDM path.
+# Shared 6 cosmology params + priors are IDENTICAL to the afterglow
+# yamls so the evidence difference is a clean model comparison.
+#
+# Expected runtime: ~8-12 hr, 16 cores (nlive ~ 25*nDim, PolyChord).
+# ==============================================================
+
+theory:
+  classy:
+    extra_args:
+      output: "tCl,pCl,lCl,mPk"
+      l_max_scalars: 2508
+      lensing: "yes"
+      non_linear: "halofit"
+
+likelihood:
+  planck_NPIPE_highl_CamSpec.TTTEEE:
+    path: ./data/Planck_NPIPE
+  planck_NPIPE_lowl_TT:
+    path: ./data/Planck_NPIPE
+  planck_NPIPE_lowl_EE:
+    path: ./data/Planck_NPIPE
+  planck_2018_lensing.clik:
+    path: ./data/Planck_NPIPE
+  bao.desi_dr2:
+    path: ./data/DESI_DR2
+  sn.pantheonplus:
+    path: ./data/Pantheon+
+    use_abs_mag: False
+
+params:
+  H0:
+    prior: {min: 55.0, max: 85.0}
+    ref:   {dist: norm, loc: 67.4, scale: 1.0}
+    proposal: 0.5
+    latex: H_0
+  omega_b:
+    prior: {min: 0.019, max: 0.025}
+    ref:   {dist: norm, loc: 0.02237, scale: 0.0002}
+    proposal: 0.0001
+    latex: \Omega_\mathrm{b} h^2
+  omega_cdm:
+    prior: {min: 0.10, max: 0.15}
+    ref:   {dist: norm, loc: 0.1200, scale: 0.001}
+    proposal: 0.0005
+    latex: \Omega_\mathrm{cdm} h^2
+  tau_reio:
+    prior: {min: 0.01, max: 0.10}
+    ref:   {dist: norm, loc: 0.0543, scale: 0.008}
+    proposal: 0.005
+    latex: \tau_\mathrm{reio}
+  ln10As:
+    prior: {min: 2.5, max: 3.5}
+    ref:   {dist: norm, loc: 3.044, scale: 0.014}
+    proposal: 0.005
+    latex: \ln 10^{10} A_\mathrm{s}
+  n_s:
+    prior: {min: 0.92, max: 1.00}
+    ref:   {dist: norm, loc: 0.965, scale: 0.004}
+    proposal: 0.003
+    latex: n_\mathrm{s}
+  # derived predictions, matched to the afterglow yamls
+  Omega_m:
+    latex: \Omega_\mathrm{m}
+  sigma8:
+    latex: \sigma_8
+
+# ---------- sampler: PolyChord nested sampling -> evidence ----------
+sampler:
+  polychord:
+    # nlive and num_repeats auto-scale with nDim inside cobaya:
+    #   nlive       default 25*nDim
+    #   num_repeats default 5*nDim   (we bump precision_criterion tighter)
+    precision_criterion: 0.001        # stop when remaining lnZ fraction < 1e-3
+    nlive: 500                         # >= 25*nDim for ~20 sampled dims
+    num_repeats: 60                    # ~3*nDim oversampling for good mixing
+    do_clustering: True
+    read_resume: True
+
+output: chains/evidence_lcdm/lcdm_ns
+resume: True
+force: False
+debug: False
+packages_path: ./cobaya_packages
