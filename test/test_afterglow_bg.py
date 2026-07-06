@@ -20,6 +20,9 @@
 #   Test 5  Exchange law Q            sign(Q) = -sign(Psi) for beta>0 [Eq. 42]
 #   Test 6  Smoothness at beta=2.5    finiteness, positivity, monotone
 #                                     [Eqs. 37 + 42 together]
+#   Test 6b Crossing at beta=2.7      w_eff dips below -1 and returns,
+#                                     finite + smooth; control beta=2.5
+#                                     does not cross [Eq. crossinglower]
 #   Test 7  RHS point-match to Eq.43  numerical d rho_X/dN agrees with
 #                                     -(1/c_D)[1-βΨ(r)]ρ_X to 1e-14
 #                                     [direct regression test for Eq. 43]
@@ -259,6 +262,76 @@ def test6_energy_conservation_smoothness():
     # speeds relaxation → Sigma decays monotonically faster than c_D=1 alone
     check("Sigma monotonically increasing backward in time",
           all(Sigma[i] >= Sigma[i - 1] - 1e-12 for i in range(1, len(Sigma))))
+
+
+# ═══════════════════════════════════════════════════════════════════
+#   Test 6b. Effective phantom crossing at beta = 2.7
+#
+#   Eq. (crossinglower): w_eff dips below -1 iff beta > 1/Psi_max
+#   = 3*sqrt(3)/2 ≈ 2.598. Test 6 (beta = 2.5) never crosses, so it
+#   cannot support the "no gauge singularity at crossing" pre-run
+#   check. This test runs beta = 2.7 — inside the Phase-3c entry gate
+#   [2.65, 2.75] — where the crossing DOES occur, and asserts that
+#   the background sails through both crossings finitely and smoothly,
+#   that the dip respects the analytic floor
+#   w_eff >= -1 + (1 - beta*Psi_max)/(3 c_D), and that the
+#   baseline-frame guard 4 - 3*beta*Psi(r) > 0 holds throughout.
+#   A control run at beta = 2.5 pins the threshold: no crossing.
+# ═══════════════════════════════════════════════════════════════════
+def test6b_crossing_smoothness():
+    print("\nTest 6b :  effective phantom crossing with beta = 2.7, c_D = 1.0")
+    c_D = 1.0
+    Omega0_X = 0.69
+    Omega0_c = 0.26
+
+    def w_eff_track(beta, N_steps=2001):
+        N_grid = [(-8.0) * i / (N_steps - 1) for i in range(N_steps)]
+        ap = AfterglowParams(c_D=c_D, beta_aft=beta)
+        rho_X, Sigma, _ = evolve(ap, Omega0_X, Omega0_c, N_grid)
+        w = []
+        guard_min = float("inf")
+        for N, rx in zip(N_grid, rho_X):
+            r = Omega0_c * math.exp(-3.0 * N) / rx
+            psi = Psi(r)
+            w.append(-1.0 + (1.0 - beta * psi) / (3.0 * c_D))
+            guard_min = min(guard_min, 4.0 - 3.0 * beta * psi)
+        return rho_X, Sigma, w, guard_min
+
+    beta = 2.7
+    rho_X, Sigma, w, guard_min = w_eff_track(beta)
+    check("rho_X is finite everywhere", all(math.isfinite(x) for x in rho_X))
+    check("Sigma is finite everywhere", all(math.isfinite(s) for s in Sigma))
+    check("rho_X stays positive", all(x > 0 for x in rho_X))
+
+    w_min = min(w)
+    Psi_max = 2.0 * math.sqrt(3.0) / 9.0           # Eq. 35
+    w_floor = -1.0 + (1.0 - beta * Psi_max) / (3.0 * c_D)
+    check("w_eff crosses -1 (beta = 2.7 > 3*sqrt(3)/2)",
+          w_min < -1.0, f"min w_eff = {w_min:.6f}")
+    check("crossing is a strip: w_eff > -1 at both ends of the window",
+          w[0] > -1.0 and w[-1] > -1.0)
+    check("dip respects analytic floor -1 + (1 - beta*Psi_max)/(3 c_D)",
+          w_min >= w_floor - 1e-12, f"floor = {w_floor:.6f}")
+    # Smoothness = continuity under refinement: for a smooth track the
+    # max per-step change is O(dN), so halving dN halves it. A genuine
+    # discontinuity would leave it unchanged.
+    dw_max = max(abs(w[i] - w[i - 1]) for i in range(1, len(w)))
+    _, _, w_fine, _ = w_eff_track(beta, N_steps=4001)
+    dw_max_fine = max(abs(w_fine[i] - w_fine[i - 1])
+                      for i in range(1, len(w_fine)))
+    ratio = dw_max_fine / dw_max
+    check("w_eff smooth through both crossings (max step halves as dN/2)",
+          0.4 < ratio < 0.6,
+          f"max |dw_eff| {dw_max:.2e} -> {dw_max_fine:.2e}, ratio {ratio:.3f}")
+    check("w_eff derivative bounded (|dw/dN| < 2 everywhere)",
+          dw_max / 4.0e-3 < 2.0, f"max |dw/dN| = {dw_max / 4.0e-3:.3f}")
+    check("baseline-frame guard 4 - 3*beta*Psi(r) > 0 everywhere",
+          guard_min > 0.0, f"min guard = {guard_min:.4f}")
+
+    # Control: just below the threshold, no crossing.
+    _, _, w_ctl, _ = w_eff_track(2.5)
+    check("control beta = 2.5 < 3*sqrt(3)/2 never crosses",
+          min(w_ctl) > -1.0, f"min w_eff = {min(w_ctl):.6f}")
 
 
 # ═══════════════════════════════════════════════════════════════════
@@ -527,6 +600,7 @@ if __name__ == "__main__":
     test4_Psi_sign()
     test5_exchange_sign()
     test6_energy_conservation_smoothness()
+    test6b_crossing_smoothness()
     test7_rhs_pointmatch_eq43()
     test8_glue_derivs()
     test9_glue_initial_conditions()
