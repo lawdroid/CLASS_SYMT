@@ -38,15 +38,15 @@
 <h1>Phase 3 — posterior summary</h1>
 <p class="muted">Three pre-registered branches of the Martin–Koh Yang-Mills afterglow framework against current data. This page is the abstract; see the explorer for interactive 2D KDEs and the YM-anchor page for the equations behind the branch boundaries.</p>
 
-<div id="data-source-banner" class="warn">
-  Data on this page is currently from <strong>mock samples</strong> (see <code>mcmc/gen_chains_summary_mock.py</code>). Replace <code>chains_summary.json</code> with output from <code>mcmc/export_chains_summary.py</code> once real chains have been fetched.
+<div id="data-source-banner" class="warn" style="background:#082a17;border-left:3px solid #2ea043;color:#7ee2a8;">
+  Data: <strong>real chains</strong> (final, converged) &middot; generated 2026-06-02 by <code>mcmc/export_chains_summary.py</code> &rarr; <code>chains_summary.json</code>. A GitHub-rendered version of this page is at <code>phase3_summary.md</code>.
 </div>
 
 <div class="card">
 <h2>Headline (three things, in plain language)</h2>
 <ol>
 <li><span class="key">β is not constrained by the data.</span> The 3b marginal is flat across the full prior (0, 2.4]; the 3c marginal mirrors its narrow B1 prior. In both cases the posterior shape equals the prior shape — the data has no opinion on β across either window.</li>
-<li><span class="key">c_D is constrained from above.</span> All three branches give c_D peaking around 18–22 with the 95% region capped near <span class="val">c_D ≲ 70</span>. This is the main data-driven bound.</li>
+<li><span class="key">c_D is constrained from above.</span> Branch medians sit at c_D ≈ 22.7 / 23.7 / 28.7 (3a/3b/3c) with the 95% region capped near <span class="val">c_D ≲ 85–90</span> (per-branch q95: 83.5 / 85.2 / 88.1). This is the main data-driven bound.</li>
 <li><span class="key">H₀, Ωₘ, σ₈, and w_χ are robust across branches.</span> w_χ is tight at <span class="val">–0.99</span> — effectively a cosmological constant — in all three branches. H₀, Ωₘ, σ₈ shift by less than ~1σ between branches.</li>
 </ol>
 <p><strong>No bimodality anywhere.</strong> Every 2D KDE is a single ridge. See the geometry-lesson page for why this matters and what the §3.11 indirect-signal trap looks like.</p>
@@ -107,7 +107,7 @@
 <h3>Defensible</h3>
 <ul>
   <li>The framework is consistent with current data across all three pre-registered branches.</li>
-  <li>c_D &lt; ~70 at 95% across all three branches.</li>
+  <li>c_D &lt; ~85–90 at 95% across all three branches (q95 = 83.5 / 85.2 / 88.1).</li>
   <li>w_χ ≈ –0.99 across all three branches — effectively a cosmological constant in the data.</li>
   <li>The data does not discriminate β within any of the explored priors.</li>
 </ul>
