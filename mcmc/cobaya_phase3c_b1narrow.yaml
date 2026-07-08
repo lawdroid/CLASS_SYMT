@@ -11,7 +11,7 @@
 #   w_eff dip ~10^-2 below -1 in z in [0.5, 2].
 #   Intrinsic w_X stays >= -1 (hard floor).
 #
-# Hardware: Mac mini M4 (Ingui-Macmini), 10 cores, /Volumes/AppsSSD/MCMC.
+# Hardware: Mac mini M4, 10 cores.
 # Run on mac mini to avoid contention with Ubuntu's 3a + 3b.
 # Pending Tom's final B1 / B3 / Drop confirmation from 5/7 message.
 # ==============================================================

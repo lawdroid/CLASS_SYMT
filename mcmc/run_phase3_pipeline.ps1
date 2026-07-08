@@ -8,10 +8,10 @@
 #   3. python mcmc/export_chains_summary.py -> chains_summary.json with REAL data + pending_numbers
 #
 # Per CLAUDE.md §1, run from Windows PowerShell (not WSL) — WSL→LAN NAT
-# blocks ssh to 192.168.200.*; Windows-side ssh works.
+# blocks ssh to the lab LAN; Windows-side ssh works.
 #
 # Prerequisites:
-#   - passwordless ssh to i@192.168.200.119 and ingko@192.168.200.173
+#   - passwordless ssh to both lab machines (set the two host variables below)
 #   - python on PATH with: numpy, pandas (only used if MCEvidence is installed)
 #   - optional: pip install MCEvidence  (for logZ_3a, logZ_3b populated)
 #   - optional: chains/lcdm_reference/ exists (for delta_logZ_3b_vs_lcdm)
@@ -25,9 +25,9 @@ Write-Host ""
 
 # Canonical paths the export script reads
 $paths = @{
-    "phase3a_baseline"     = "i@192.168.200.119:/media/i/storage/CLASS_SYMT/chains/phase3a_baseline"
-    "phase3b_noncrossing"  = "i@192.168.200.119:/media/i/storage/CLASS_SYMT/chains/phase3b_noncrossing"
-    "phase3c_b1narrow"     = "ingko@192.168.200.173:/Volumes/AppsSSD/MCMC/CLASS_SYMT/chains/phase3c_b1narrow"
+    "phase3a_baseline"     = "<user@ubuntu-host>:<CLASS_SYMT_ROOT>/chains/phase3a_baseline"
+    "phase3b_noncrossing"  = "<user@ubuntu-host>:<CLASS_SYMT_ROOT>/chains/phase3b_noncrossing"
+    "phase3c_b1narrow"     = "<user@macmini-host>:<CLASS_SYMT_ROOT>/chains/phase3c_b1narrow"
 }
 
 foreach ($name in $paths.Keys) {

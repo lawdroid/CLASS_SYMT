@@ -10,9 +10,9 @@
 #   .\mcmc\wait_and_fetch_3c.ps1 -PollSeconds 15 -MaxAttempts 480   # 2 hours
 
 param(
-    [string]$RemoteHost      = "192.168.200.173",
-    [string]$User      = "ingko",
-    [string]$RemotePath= "/Volumes/AppsSSD/MCMC/CLASS_SYMT/chains/phase3c_b1narrow",
+    [string]$RemoteHost      = "<macmini-host>",
+    [string]$User      = "<macmini-user>",
+    [string]$RemotePath= "<CLASS_SYMT_ROOT>/chains/phase3c_b1narrow",
     [int]$PollSeconds  = 15,
     [int]$MaxAttempts  = 240   # default ~1 hour at 15 s/attempt
 )

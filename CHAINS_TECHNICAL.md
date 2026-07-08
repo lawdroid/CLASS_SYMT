@@ -336,5 +336,5 @@ of the input yaml. Python ≥ 3.9 expected.
 Data: Ingyu Koh — ingyukoh2@gmail.com
 Repo: https://github.com/ingyukoh/CLASS_SYMT (private fork of lawdroid/CLASS_SYMT)
 Generated 2026-06-02 / 2026-06-03 from chains running on:
-- Ubuntu workstation `i@192.168.200.119` (3a, 3b)
-- Mac mini M4 `ingko@192.168.200.173` (3c)
+- Ubuntu workstation (3a, 3b)
+- Mac mini M4 (3c)

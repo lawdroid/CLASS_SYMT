@@ -11,8 +11,8 @@
 # Delta log Z(3a-LCDM) ~ +0.5; this run replaces the boundary
 # extrapolation with a direct, absolute log Z for each model.
 #
-# Run on the Ubuntu workstation (i@192.168.200.119):
-#   cd /media/i/storage/CLASS_SYMT
+# Run on the compute workstation:
+#   cd <CLASS_SYMT_ROOT>
 #   nohup bash mcmc/launch_evidence_run.sh > evidence_run.log 2>&1 &
 #
 # Expected wall time: ~8-12 hr each on 16 MPI ranks (~20 sampled dims,
