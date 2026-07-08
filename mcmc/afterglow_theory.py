@@ -3,20 +3,6 @@ afterglow_theory.py
 -------------------
 Custom Cobaya theory wrapper for the CLASS_SYMT afterglow dark-energy
 model (Martin & Koh, April 2026).
-
-Inherits from the stock `classy` wrapper and adds two knobs that the
-stock wrapper doesn't know about: c_D and beta_aft. These get mapped
-to the CLASS input parameters that the afterglow glue layer reads.
-
-Usage in a Cobaya yaml:
-    theory:
-      afterglow_theory.AfterglowTheory:
-        python_path: ./
-        extra_args:
-          afterglow_on: "yes"
-
-Stage-1 requests only background observables (H(z), D_L, D_A, theta_*);
-Stage-2 additionally requests Cls and P(k).
 """
 from __future__ import annotations
 from cobaya.theories.classy import classy
@@ -24,81 +10,98 @@ from cobaya.log import LoggedError
 
 
 class AfterglowTheory(classy):
-    """
-    Extends the stock Cobaya `classy` wrapper with afterglow parameters:
-      * c_D      — dimensionless memory time (sets w_X = -1 + 1/(3 c_D))
-      * beta_aft — loading-kernel coupling strength (Eq. 43 / Eq. 44)
-      * Omega_X  — closure density (computed from 1 - sum_others in initialize_with_params)
-    """
 
-    # Declare that this theory can provide derived parameters on top of
-    # what classy already offers.
+    _custom_derived = (
+        "w_X", "Omega_X",
+        "sigma8_at_z0p1", "sigma8_at_z0p3", "sigma8_at_z0p5",
+        "fsigma8_at_z0p1", "fsigma8_at_z0p3", "fsigma8_at_z0p5", "late_branch_guard",
+    )
+
     def must_provide(self, **requirements):
-        # Inherit everything classy provides (H(z), rs, sigma_8, Cls, P(k))
         super().must_provide(**requirements)
+        # Strip our custom names from derived_extra if classy added them
+        if hasattr(self, "derived_extra"):
+            self.derived_extra = [
+                p for p in self.derived_extra if p not in self._custom_derived
+            ]
 
     def calculate(self, state, want_derived=True, **params_values_dict):
-        """
-        Map MCMC sample -> CLASS input dictionary, then delegate to
-        the stock classy compute.
-        """
-        # --- map sampled params to CLASS keys ---
-        params = dict(params_values_dict)  # shallow copy
+        params = dict(params_values_dict)
         c_D      = params.pop("c_D")
-        beta_aft = params.pop("beta_aft")
+        beta_aft = params.pop("beta_aft", 0.0)
 
-        # Closure: Omega_X = 1 - Omega_b - Omega_cdm - Omega_r (radiation
-        # fixed by T_cmb). CLASS handles this if we set Omega_Lambda = 0
-        # and let afterglow carry the budget.
-        params["Omega_Lambda"] = 0.0
-        params["Omega_afterglow"] = -1.0       # sentinel -> compute from closure
+        params["afterglow_on"] = 1
+        params["c_D"]          = c_D
+        params["beta_aft"]     = beta_aft
+        params["Sigma_today"]  = -1.0
 
-        # --- afterglow inputs (read by src/background.c via input.c) ---
-        params["afterglow_on"] = "yes"
-        params["afterglow_c_D"] = c_D
-        params["afterglow_beta"] = beta_aft
-        params["afterglow_Sigma_today"] = -1.0  # auto: Omega0_X / (3 c_D)
-
-        # Delegate to stock classy. This runs CLASS, fills state with
-        # all standard observables, and we add afterglow-specific
-        # derived quantities below.
+        # Cache before super so _get_derived_all (called from inside) sees it
+        self._last_c_D = c_D
+        self._last_beta_aft = beta_aft
         super().calculate(state, want_derived=want_derived, **params)
 
-        if want_derived and state.get("derived") is not None:
-            w_X = -1.0 + 1.0 / (3.0 * c_D)
-            state["derived"]["w_X"] = w_X
-            # Omega_X from CLASS's background table
-            cosmo = self.classy
+    def _get_derived_all(self, derived_requested=True):
+        # Stash and strip custom names from BOTH lists so parent never asks
+        # CLASS to resolve them.
+        full_op = list(self.output_params)
+        full_de = list(self.derived_extra) if hasattr(self, "derived_extra") else []
+        try:
+            self.output_params = [p for p in full_op if p not in self._custom_derived]
+            if hasattr(self, "derived_extra"):
+                self.derived_extra = [
+                    p for p in full_de if p not in self._custom_derived
+                ]
+            std_derived, std_extra = super()._get_derived_all(
+                derived_requested=derived_requested)
+        finally:
+            self.output_params = full_op
+            if hasattr(self, "derived_extra"):
+                self.derived_extra = full_de
+
+        if not derived_requested:
+            return std_derived, std_extra
+
+        # Now compute custom derived from CLASS state
+        cosmo = self.classy
+        try:
+            c_D = getattr(self, "_last_c_D", 1.0)
+            std_derived["w_X"] = -1.0 + 1.0 / (3.0 * c_D)
+            beta_v = getattr(self, "_last_beta_aft", 0.0)
+            std_derived["late_branch_guard"] = c_D - (1.0 + 4.0 * beta_v) / 3.0
+            h = cosmo.h()
+            R8 = 8.0 / h
+            for z, label in ((0.1, "0p1"), (0.3, "0p3"), (0.5, "0p5")):
+                s8z = cosmo.sigma(R8, z)
+                fz = cosmo.scale_independent_growth_factor_f(z)
+                std_derived[f"sigma8_at_z{label}"] = float(s8z)
+                std_derived[f"fsigma8_at_z{label}"] = float(fz * s8z)
             bg = cosmo.get_background()
-            # Locate afterglow rho_X column if present
-            if "(.)rho_afterglow" in bg:
-                rho_X_today = bg["(.)rho_afterglow"][-1]
-                rho_crit_today = bg["(.)rho_crit"][-1]
-                state["derived"]["Omega_X"] = rho_X_today / rho_crit_today
+            key = next(
+                (k for k in bg if "rho_afterglow" in k or "rho_X" in k),
+                None,
+            )
+            if key is not None and "(.)rho_crit" in bg:
+                std_derived["Omega_X"] = float(
+                    bg[key][-1] / bg["(.)rho_crit"][-1])
             else:
-                # Fall back to closure
-                O_b = params.get("omega_b", 0.0224) / (params.get("H0", 67.4) / 100.0) ** 2
-                O_c = params.get("omega_cdm", 0.12) / (params.get("H0", 67.4) / 100.0) ** 2
-                O_r = 9.2e-5          # photons + massless neutrinos
-                state["derived"]["Omega_X"] = 1.0 - O_b - O_c - O_r
+                std_derived["Omega_X"] = float("nan")
+        except Exception as e:
+            self.log.warning(
+                "AfterglowTheory: custom-derived failed: %s", e)
+            for name in self._custom_derived:
+                std_derived.setdefault(name, float("nan"))
+
+        return std_derived, std_extra
 
     def initialize(self):
-        """
-        Called once at start of chain. Check that the CLASS build
-        actually has afterglow support compiled in.
-        """
         super().initialize()
         try:
-            # Probe: try setting an afterglow-only parameter. If the C
-            # code doesn't know about it, classy raises.
-            self.classy.set({"afterglow_on": "no"})
-            self.classy.set({"afterglow_c_D": 1.0})
+            self.classy.set({"afterglow_on": 1})
+            self.classy.set({"c_D": 1.0})
         except Exception as e:
             raise LoggedError(
                 self.log,
                 "Your CLASS binary does NOT have afterglow support. "
-                "Rebuild CLASS_SYMT with patches 1-12 applied and "
-                "afterglow_on/afterglow_c_D/afterglow_beta exposed in "
-                "input.c. Error: %s" % e
+                "Rebuild CLASS_SYMT with afterglow source files. Error: %s" % e
             )
         self.log.info("AfterglowTheory initialized successfully.")
