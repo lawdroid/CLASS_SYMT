@@ -297,7 +297,7 @@ python mcmc/evidence_knn.py
 `phase3a_FULL_BACKUP_20260506_1233/` are kept solely for forensics.
 The original 3a run crashed at 9 h 45 min wall time with R−1 = 0.501
 when `planck_2018_lensing.native` raised "No lensed Cl's were
-computed" and aborted MPI. The fix (commit `10515ae` — Phase 3 / B1
+computed" and aborted MPI. The fix (Phase 3 / B1
 smooth regulator + per-likelihood `stop_at_error: false`) is in the
 live `phase3a_baseline/` chain.
 
@@ -333,8 +333,8 @@ of the input yaml. Python ≥ 3.9 expected.
 
 ## 11. Contact and provenance
 
-Data: Ingyu Koh — ingyukoh2@gmail.com
-Repo: https://github.com/ingyukoh/CLASS_SYMT (private fork of lawdroid/CLASS_SYMT)
+Data: Ingyu Koh
+Repo: https://github.com/lawdroid/CLASS_SYMT
 Generated 2026-06-02 / 2026-06-03 from chains running on:
 - Ubuntu workstation (3a, 3b)
 - Mac mini M4 (3c)
