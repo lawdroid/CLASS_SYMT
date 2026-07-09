@@ -60,34 +60,32 @@ releases.
     ./class afterglow.ini          # ΛCDM-compatible defaults
     python -m pytest test/         # 65 assertions, background + perturbations
 
-Tag `phase3-v1` (commit `8cd7e00`) is the exact state behind the
-paper's chains.
+Tag `phase3-v1` (commit `d382e60`) is the exact state behind the paper's chains.
 
 ## Repository map
 
-- `source/afterglow/`, `include/afterglow/` — the module; comments cite
+- [`source/afterglow/`](source/afterglow/), [`include/afterglow/`](include/afterglow/) — the module; comments cite
   paper equations
-- `afterglow.ini` — sample input
-- `test/test_afterglow_bg.py`, `test/test_afterglow_pt.py` — unit
+- [`afterglow.ini`](afterglow.ini) — sample input
+- [`test/test_afterglow_bg.py`](test/test_afterglow_bg.py), [`test/test_afterglow_pt.py`](test/test_afterglow_pt.py) — unit
   suite; linear-order background Bianchi residual 8.5×10⁻¹⁷
-- `README_AFTERGLOW.md` — parameters and design notes;
-  `PLAN_AFTERGLOW.md` — equation-to-code map
-- `phase3_summary.md`, `chains_summary.json` — results
-- `ATTRIBUTION.md`, `LICENSE`, `README_CLASS.md` — upstream CLASS terms,
-  the MIT grant on the modifications, and the original CLASS README
-  preserved verbatim
+- [`README_AFTERGLOW.md`](README_AFTERGLOW.md) — parameters and design notes;
+  [`PLAN_AFTERGLOW.md`](PLAN_AFTERGLOW.md) — equation-to-code map
+- [`phase3_summary.md`](phase3_summary.md), [`chains_summary.json`](chains_summary.json) — results
+- [`ATTRIBUTION.md`](ATTRIBUTION.md`), [`LICENSE`](LICENSE), [`README_CLASS.md`](README_CLASS.md) — upstream CLASS terms, and
+  the MIT grant on the modifications, preserved verbatim.
 
 ## Explore interactively
 
 Educational companions; open locally in a browser:
 
-- `afterglow_simple.html` — ρ_X, p_X, w, and a, plainly
-- `afterglow_interactive_learn.html` — the kernel, w_X(c_D), the exchange
-- `afterglow_class_connection.html` — how dρ_X/dN enters the integrator
-- `phase3_branches_explorer.html` — posterior contours, branch by branch
-- `phase3_ym_anchor.html` — the β number line against the structural
+- [`afterglow_simple.html`](afterglow_simple.html) — ρ_X, p_X, w, and a, plainly
+- [`afterglow_interactive_learn.html`](afterglow_interactive_learn.html) — the kernel, w_X(c_D), the exchange
+- [`afterglow_class_connection.html`](afterglow_class_connection.html) — how dρ_X/dN enters the integrator
+- [`phase3_branches_explorer.html`](phase3_branches_explorer.html) — posterior contours, branch by branch
+- [`phase3_ym_anchor.html`](phase3_ym_anchor.html) — the β number line against the structural
   bounds 3√3/2 and 2√3
-- `phase3_geometry_lesson.html` — why you pull the 2D KDE before
+- [`phase3_geometry_lesson.html`](phase3_geometry_lesson.html) — why you pull the 2D KDE before
   storytelling
 
 ## Key equations implemented (numbering of the submitted paper)
@@ -106,7 +104,7 @@ Educational companions; open locally in a browser:
 
 In-code comments reference the April 2026 working draft's numbering;
 the mapping to the submitted paper is maintained in
-`PLAN_AFTERGLOW.md`.
+[`PLAN_AFTERGLOW.md`](PLAN_AFTERGLOW.md).
 
 ## Conventions
 
@@ -124,8 +122,8 @@ and A. Lewis, JCAP 05 (2021) 057).
 
 Original CLASS portions remain under the CLASS authors' terms, free use
 with citation of CLASS II; the afterglow modifications are MIT,
-© 2025–2026 T. G. Martin and I.-G. Koh. See `LICENSE` and
-`ATTRIBUTION.md`.
+© 2025–2026 T. G. Martin and I.-G. Koh. See [`LICENSE`](LICENSE) and
+[`ATTRIBUTION.md`](ATTRIBUTION.md).
 
 ## Contact
 
