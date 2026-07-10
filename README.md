@@ -8,7 +8,7 @@ implementing **Afterglow Dark Energy**:
 > T. G. Martin and I.-G. Koh, *Afterglow Dark Energy: Apparent Phantom
 > Crossing from Hidden Confinement, Tested Against Planck, DESI DR2,
 > and Pantheon+*, submitted to PDU (2026). SSRN: tbd ·
-> Code archive DOI: ![zenodo doi](external/img/afterglow-repo-doi.svg)
+> Code archive DOI: [![DOI](https://zenodo.org/badge/1198987618.svg)](https://doi.org/10.5281/zenodo.21301803)
 
 ## The model in brief
 
