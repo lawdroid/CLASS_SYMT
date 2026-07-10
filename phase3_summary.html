@@ -1,233 +1,460 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-<meta charset="UTF-8">
-<title>Phase 3 summary: 3a / 3b / 3c posteriors</title>
-<style>
-  body { font-family: -apple-system, Segoe UI, sans-serif; max-width: 920px; margin: 20px auto; padding: 0 20px; background: #0f1420; color: #e6edf3; line-height: 1.55; }
-  h1 { color: #58a6ff; }
-  h2 { color: #ffa657; margin-top: 28px; }
-  h3 { color: #e6edf3; margin-top: 22px; }
-  .card { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 18px 20px; margin: 14px 0; }
-  .key { color: #58a6ff; font-weight: 500; }
-  .val { color: #ffa657; font-weight: 500; }
-  .muted { color: #8b949e; font-size: 14px; }
-  code { background: #0d1117; padding: 2px 6px; border-radius: 3px; color: #ffa657; }
-  a { color: #58a6ff; }
-  table { border-collapse: collapse; width: 100%; margin: 8px 0; }
-  th, td { border-bottom: 1px solid #30363d; padding: 8px 10px; text-align: left; font-size: 14px; }
-  th { color: #8b949e; font-weight: 500; }
-  .big { font-size: 18px; text-align: center; padding: 14px; background: #0d1117; border-radius: 6px; margin: 10px 0; }
-  .row { display: flex; gap: 12px; flex-wrap: wrap; align-items: stretch; }
-  .row > div { flex: 1; min-width: 220px; background: #0d1117; border-radius: 6px; padding: 12px 14px; }
-  .row .lbl { color: #8b949e; font-size: 12px; }
-  .row .num { color: #ffa657; font-size: 22px; font-weight: 500; }
-  .pill { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: 12px; font-weight: 500; margin-right: 4px; }
-  .p3a { background: #0c2d52; color: #85b7eb; }
-  .p3b { background: #08382b; color: #5dcaa5; }
-  .p3c { background: #4a1b0c; color: #f0997b; }
-  .branch-img { background: #0d1117; padding: 10px; border-radius: 6px; }
-  .branch-img img { width: 100%; height: auto; display: block; border-radius: 4px; }
-  details { background: #0d1117; border-radius: 6px; padding: 10px 14px; margin: 10px 0; }
-  details summary { cursor: pointer; color: #58a6ff; font-weight: 500; }
-  .warn { background: #2a1a05; border-left: 3px solid #ef9f27; padding: 10px 14px; border-radius: 4px; color: #f1cf94; font-size: 14px; }
-</style>
+  <meta charset="UTF-8">
+  <title>Phase 3 summary: 3a / 3b / 3c posteriors</title>
+  <style>
+    body {
+      font-family: -apple-system, Segoe UI, sans-serif;
+      max-width: 920px;
+      margin: 20px auto;
+      padding: 0 20px;
+      background: #0f1420;
+      color: #e6edf3;
+      line-height: 1.55;
+    }
+
+    h1 {
+      color: #58a6ff;
+    }
+
+    h2 {
+      color: #ffa657;
+      margin-top: 28px;
+    }
+
+    h3 {
+      color: #e6edf3;
+      margin-top: 22px;
+    }
+
+    .card {
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 8px;
+      padding: 18px 20px;
+      margin: 14px 0;
+    }
+
+    .key {
+      color: #58a6ff;
+      font-weight: 500;
+    }
+
+    .val {
+      color: #ffa657;
+      font-weight: 500;
+    }
+
+    .muted {
+      color: #8b949e;
+      font-size: 14px;
+    }
+
+    code {
+      background: #0d1117;
+      padding: 2px 6px;
+      border-radius: 3px;
+      color: #ffa657;
+    }
+
+    a {
+      color: #58a6ff;
+    }
+
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      margin: 8px 0;
+    }
+
+    th,
+    td {
+      border-bottom: 1px solid #30363d;
+      padding: 8px 10px;
+      text-align: left;
+      font-size: 14px;
+    }
+
+    th {
+      color: #8b949e;
+      font-weight: 500;
+    }
+
+    .big {
+      font-size: 18px;
+      text-align: center;
+      padding: 14px;
+      background: #0d1117;
+      border-radius: 6px;
+      margin: 10px 0;
+    }
+
+    .row {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      align-items: stretch;
+    }
+
+    .row>div {
+      flex: 1;
+      min-width: 220px;
+      background: #0d1117;
+      border-radius: 6px;
+      padding: 12px 14px;
+    }
+
+    .row .lbl {
+      color: #8b949e;
+      font-size: 12px;
+    }
+
+    .row .num {
+      color: #ffa657;
+      font-size: 22px;
+      font-weight: 500;
+    }
+
+    .pill {
+      display: inline-block;
+      padding: 2px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 500;
+      margin-right: 4px;
+    }
+
+    .p3a {
+      background: #0c2d52;
+      color: #85b7eb;
+    }
+
+    .p3b {
+      background: #08382b;
+      color: #5dcaa5;
+    }
+
+    .p3c {
+      background: #4a1b0c;
+      color: #f0997b;
+    }
+
+    .branch-img {
+      background: #0d1117;
+      padding: 10px;
+      border-radius: 6px;
+    }
+
+    .branch-img img {
+      width: 100%;
+      height: auto;
+      display: block;
+      border-radius: 4px;
+    }
+
+    details {
+      background: #0d1117;
+      border-radius: 6px;
+      padding: 10px 14px;
+      margin: 10px 0;
+    }
+
+    details summary {
+      cursor: pointer;
+      color: #58a6ff;
+      font-weight: 500;
+    }
+
+    .warn {
+      background: #2a1a05;
+      border-left: 3px solid #ef9f27;
+      padding: 10px 14px;
+      border-radius: 4px;
+      color: #f1cf94;
+      font-size: 14px;
+    }
+  </style>
 </head>
+
 <body>
 
-<h1>Phase 3 — posterior summary</h1>
-<p class="muted">Three pre-registered branches of the Martin–Koh Yang-Mills afterglow framework against current data. This page is the abstract; see the explorer for interactive 2D KDEs and the YM-anchor page for the equations behind the branch boundaries.</p>
+  <h1>Phase 3 posterior summary</h1>
+  <p class="muted">Three pre-registered branches of the Martin–Koh Afterglow Dark Energy framework against current data.
+    This page is the abstract; see the explorer for interactive 2D KDEs and the YM-anchor page for the equations behind
+    the branch boundaries.</p>
 
-<div id="data-source-banner" class="warn" style="background:#082a17;border-left:3px solid #2ea043;color:#7ee2a8;">
-  Data: <strong>real chains</strong> (final, converged) &middot; generated 2026-06-02 by <code>mcmc/export_chains_summary.py</code> &rarr; <code>chains_summary.json</code>. A GitHub-rendered version of this page is at <code>phase3_summary.md</code>.
-</div>
+  <div id="data-source-banner" class="warn" style="background:#082a17;border-left:3px solid #2ea043;color:#7ee2a8;">
+    Data: <strong>real chains</strong> (final, converged) &middot; generated 2026-06-02 by
+    <code>mcmc/export_chains_summary.py</code> &rarr; <code>chains_summary.json</code>. A GitHub-rendered version of
+    this page is at <code>phase3_summary.md</code>.
+  </div>
 
-<div class="card">
-<h2>Headline (three things, in plain language)</h2>
-<ol>
-<li><span class="key">β is not constrained by the data.</span> The 3b marginal is flat across the full prior (0, 2.4]; the 3c marginal mirrors its narrow B1 prior. In both cases the posterior shape equals the prior shape — the data has no opinion on β across either window.</li>
-<li><span class="key">c_D is constrained from above.</span> Branch medians sit at c_D ≈ 22.7 / 23.7 / 28.7 (3a/3b/3c) with the 95% region capped near <span class="val">c_D ≲ 85–90</span> (per-branch q95: 83.5 / 85.2 / 88.1). This is the main data-driven bound.</li>
-<li><span class="key">H₀, Ωₘ, σ₈, and w_χ are robust across branches.</span> w_χ is tight at <span class="val">–0.99</span> — effectively a cosmological constant — in all three branches. H₀, Ωₘ, σ₈ shift by less than ~1σ between branches.</li>
-</ol>
-<p><strong>No bimodality anywhere.</strong> Every 2D KDE is a single ridge. See the geometry-lesson page for why this matters and what the §3.11 indirect-signal trap looks like.</p>
-</div>
+  <div class="card">
+    <h2>Headline (three things, in plain language)</h2>
+    <ol>
+      <li><span class="key">β on its own is unpinned; the physical coupling g is bounded.</span> The 3b marginal is flat
+        across the full prior (0, 2.4], and the 3c marginal mirrors its narrow B1 prior, so the data has no opinion on β
+        by itself. β enters the dynamics only through g ≡ β/c_D, and that combination is bounded: g &lt; 0.20 at 95%
+        (see the next card).</li>
+      <li><span class="key">c_D is constrained from above.</span> Branch medians sit at c_D ≈ 22.7 / 23.7 / 28.7
+        (3a/3b/3c) with the 95% region capped near <span class="val">c_D ≲ 85–90</span> (per-branch q95: 83.5 / 85.2 /
+        88.1). This is the main data-driven bound.</li>
+      <li><span class="key">H₀, Ωₘ, σ₈, and w_X are robust across branches.</span> w_X is tight at <span
+          class="val">–0.99</span>, effectively a cosmological constant, in all three branches; it equals the intrinsic
+        value -1 + 1/(3c_D) at the fitted c_D. H₀, Ωₘ, σ₈ shift by less than ~1σ between branches.</li>
+    </ol>
+    <p><strong>No bimodality anywhere.</strong> Every 2D KDE is a single ridge. See the geometry-lesson page for why
+      this matters and what the §3.11 indirect-signal trap looks like.</p>
+  </div>
 
-<div class="card">
-<h2>The three branches</h2>
-<table>
-<tr><th>Branch</th><th>β prior</th><th>Theory rationale</th><th>What we see</th></tr>
-<tr>
-  <td><span class="pill p3a">3a</span> baseline</td>
-  <td><code>β = 0</code></td>
-  <td>Arrested-medium hypothesis. Isolated YM tail, no DE↔matter coupling.</td>
-  <td>Clean Gaussian posterior; reference for the others.</td>
-</tr>
-<tr>
-  <td><span class="pill p3b">3b</span> non-crossing</td>
-  <td><code>β ∈ (0, 2.4]</code></td>
-  <td>Coupled, but below the structural crossing threshold β·Ψ_max &gt; 1.</td>
-  <td>β marginal is flat; non-β params look like 3a with mild shifts.</td>
-</tr>
-<tr>
-  <td><span class="pill p3c">3c</span> crossing (B1-narrow)</td>
-  <td><code>β ∈ [2.65, 2.75]</code></td>
-  <td>Inside the structurally-allowed crossing window 3√3/2 &lt; β &lt; 2√3.</td>
-  <td>β marginal mirrors the narrow prior; non-β params consistent with 3a/3b.</td>
-</tr>
-</table>
-</div>
+  <div class="card">
+    <h2>The coupling</h2>
+    <p>β enters the equations of motion only through the ratio <span class="key">g ≡ β/c_D</span>, so β on its own is
+      unidentified while the physically meaningful combination is bounded. A flat marginal in the β basis and a bounded
+      marginal in the g basis are the same statement (Savage–Dickey). Post-processing the 3b chain sample-by-sample in
+      the g basis gives:</p>
+    <div class="row">
+      <div>
+        <div class="lbl">g median</div>
+        <div class="num">0.038</div>
+      </div>
+      <div>
+        <div class="lbl">g 84%</div>
+        <div class="num">0.115</div>
+      </div>
+      <div>
+        <div class="lbl">g 95% upper</div>
+        <div class="num">0.195</div>
+      </div>
+    </div>
+    <p class="muted">So the geometry-plus-CMB stack bounds the physical coupling at g &lt; 0.20 (95%) even though the β
+      marginal is featureless. The bound is set through geometry, not through the growth channel in which g is defined;
+      a redshift-space-distortion and cosmic-shear extension is forecast to roughly halve it.</p>
+  </div>
 
-<div class="card">
-<h2>The money plot — (β, c_D)</h2>
-<div class="branch-img"><img src="analysis_2026-05-27/beta_cD_money_plot.png" alt="2D KDE of β vs c_D for branches 3b and 3c"></div>
-<p class="muted">Horizontal slabs in both panels. Vertical extent (c_D) is data-driven. Horizontal extent (β) is the prior — if you slice horizontally at any c_D the likelihood is roughly constant across β. That visual is the signature of a flat likelihood in β.</p>
-</div>
+  <div class="card">
+    <h2>The three branches</h2>
+    <table>
+      <tr>
+        <th>Branch</th>
+        <th>β prior</th>
+        <th>Theory rationale</th>
+        <th>What we see</th>
+      </tr>
+      <tr>
+        <td><span class="pill p3a">3a</span> baseline</td>
+        <td><code>β = 0</code></td>
+        <td>Arrested-medium hypothesis. Isolated YM tail, no DE↔matter coupling.</td>
+        <td>Clean Gaussian posterior; reference for the others.</td>
+      </tr>
+      <tr>
+        <td><span class="pill p3b">3b</span> non-crossing</td>
+        <td><code>β ∈ (0, 2.4]</code></td>
+        <td>Coupled, but below the structural crossing threshold β·Ψ_max &gt; 1.</td>
+        <td>β marginal is flat; non-β params look like 3a with mild shifts.</td>
+      </tr>
+      <tr>
+        <td><span class="pill p3c">3c</span> crossing (B1-narrow)</td>
+        <td><code>β ∈ [2.65, 2.75]</code></td>
+        <td>Inside the structurally-allowed crossing window 3√3/2 &lt; β &lt; 2√3.</td>
+        <td>β marginal mirrors the narrow prior; non-β params consistent with 3a/3b.</td>
+      </tr>
+    </table>
+  </div>
 
-<div class="card">
-<h2>Cross-branch 1D marginals</h2>
-<div class="branch-img"><img src="analysis_2026-05-27/cross_branch_1d_marginals.png" alt="1D marginals for β, c_D, H0, Omega_m, sigma_8, w_chi overlaid for all three branches"></div>
-<p class="muted">Six panels, three curves per panel (red = 3a, blue = 3b, green = 3c). Curves that overlay → result is robust across branches. Curves that spread → result depends on the β branch assumption. Only β shows large branch-dependence (because each branch has a different β prior); c_D, H₀, w_χ overlay cleanly; Ωₘ and σ₈ shift mildly within ~1σ.</p>
-</div>
+  <div class="card">
+    <h2>The money plot: (β, c_D)</h2>
+    <div class="branch-img"><img src="analysis_2026-05-27/beta_cD_money_plot.png"
+        alt="2D KDE of β vs c_D for branches 3b and 3c"></div>
+    <p class="muted">Horizontal slabs in both panels. Vertical extent (c_D) is data-driven. Horizontal extent (β) is the
+      prior: if you slice horizontally at any c_D the likelihood is roughly constant across β. That visual is the
+      signature of a flat likelihood in β.</p>
+  </div>
 
-<div class="card">
-<h2>Per-branch 2D KDEs</h2>
-<div class="row">
-  <div><div class="lbl"><span class="pill p3a">3a baseline</span></div><div class="branch-img" style="margin-top:8px;"><img src="analysis_2026-05-27/kde_2d_3a.png" alt="2D KDE for branch 3a"></div></div>
-</div>
-<div class="row" style="margin-top:10px;">
-  <div><div class="lbl"><span class="pill p3b">3b non-crossing</span></div><div class="branch-img" style="margin-top:8px;"><img src="analysis_2026-05-27/kde_2d_3b.png" alt="2D KDE for branch 3b"></div></div>
-</div>
-<div class="row" style="margin-top:10px;">
-  <div><div class="lbl"><span class="pill p3c">3c crossing</span></div><div class="branch-img" style="margin-top:8px;"><img src="analysis_2026-05-27/kde_2d_3c.png" alt="2D KDE for branch 3c"></div></div>
-</div>
-</div>
+  <div class="card">
+    <h2>Cross-branch 1D marginals</h2>
+    <div class="branch-img"><img src="analysis_2026-05-27/cross_branch_1d_marginals.png"
+        alt="1D marginals for β, c_D, H0, Omega_m, sigma_8, w_chi overlaid for all three branches"></div>
+    <p class="muted">Six panels, three curves per panel (red = 3a, blue = 3b, green = 3c). Curves that overlay → result
+      is robust across branches. Curves that spread → result depends on the β branch assumption. Only β shows large
+      branch-dependence (because each branch has a different β prior); c_D, H₀, w_X overlay cleanly; Ωₘ and σ₈ shift
+      mildly within ~1σ.</p>
+  </div>
 
-<div class="card">
-<h2>What you can and can't claim</h2>
-<h3>Defensible</h3>
-<ul>
-  <li>The framework is consistent with current data across all three pre-registered branches.</li>
-  <li>c_D &lt; ~85–90 at 95% across all three branches (q95 = 83.5 / 85.2 / 88.1).</li>
-  <li>w_χ ≈ –0.99 across all three branches — effectively a cosmological constant in the data.</li>
-  <li>The data does not discriminate β within any of the explored priors.</li>
-</ul>
-<h3>Not defensible</h3>
-<ul>
-  <li>"Data prefers β = X" — no β peak in any branch.</li>
-  <li>"Evidence for or against non-zero coupling" — likelihood is flat in β.</li>
-  <li>"Bimodality in 3b" — KDE shows a single ridge; indirect signals can be misleading (see geometry-lesson page).</li>
-</ul>
-</div>
+  <div class="card">
+    <h2>Per-branch 2D KDEs</h2>
+    <div class="row">
+      <div>
+        <div class="lbl"><span class="pill p3a">3a baseline</span></div>
+        <div class="branch-img" style="margin-top:8px;"><img src="analysis_2026-05-27/kde_2d_3a.png"
+            alt="2D KDE for branch 3a"></div>
+      </div>
+    </div>
+    <div class="row" style="margin-top:10px;">
+      <div>
+        <div class="lbl"><span class="pill p3b">3b non-crossing</span></div>
+        <div class="branch-img" style="margin-top:8px;"><img src="analysis_2026-05-27/kde_2d_3b.png"
+            alt="2D KDE for branch 3b"></div>
+      </div>
+    </div>
+    <div class="row" style="margin-top:10px;">
+      <div>
+        <div class="lbl"><span class="pill p3c">3c crossing</span></div>
+        <div class="branch-img" style="margin-top:8px;"><img src="analysis_2026-05-27/kde_2d_3c.png"
+            alt="2D KDE for branch 3c"></div>
+      </div>
+    </div>
+  </div>
 
-<details id="pending-details" open>
-<summary>Three placeholder slots awaiting computation (task #7 / P1)</summary>
-<div class="row">
-  <div><div class="lbl">β 95% CI (3b, lower bound)</div><div class="num" id="slot-beta-lower">— pending —</div></div>
-  <div><div class="lbl">log Z (3a)</div><div class="num" id="slot-logz-3a">— pending —</div></div>
-  <div><div class="lbl">log Z (3b)</div><div class="num" id="slot-logz-3b">— pending —</div></div>
-</div>
-<div class="row" style="margin-top:8px;">
-  <div><div class="lbl">log Z (3c) — bonus</div><div class="num" id="slot-logz-3c">— pending —</div></div>
-  <div><div class="lbl">Δ log Z (3b − 3a) — flat-β cross-check</div><div class="num" id="slot-delta-3b-3a">— pending —</div></div>
-  <div><div class="lbl">Δ log Z (3b − ΛCDM)</div><div class="num" id="slot-delta-logz">— pending —</div></div>
-</div>
-<p class="muted" id="pending-caveat">Status: <span id="pending-status">computing…</span></p>
-</details>
+  <div class="card">
+    <h2>Defensible Claims</h2>
+    <ul>
+      <li>The framework is consistent with current data across all three pre-registered branches.</li>
+      <li>c_D &lt; ~85–90 at 95% across all three branches (q95 = 83.5 / 85.2 / 88.1).</li>
+      <li>w_X ≈ –0.99 across all three branches, effectively a cosmological constant in the data.</li>
+      <li>The physical coupling is bounded: g ≡ β/c_D &lt; 0.20 at 95% (median g = 0.038), set through the geometry and
+        CMB channels.</li>
+      <li>β on its own is not discriminated within any of the explored priors, which is the same statement as the g
+        bound in a different basis.</li>
+    </ul>
+  </div>
 
-<script>
-// Auto-populate from chains_summary.json. Works when served (localhost:8000);
-// will silently no-op when opened via file:// due to fetch CORS — that's fine,
-// the static "— pending —" placeholders remain visible.
-(async () => {
-  try {
-    const res = await fetch("chains_summary.json", {cache: "no-store"});
-    if (!res.ok) return;
-    const j = await res.json();
-    const src = (j.data_source || "").toLowerCase();
-    const isReal = src.includes("real") && !src.includes("mock");
+  <div class="card">
+    <h2>Model comparison versus ΛCDM (from the converged chains)</h2>
+    <p>ΛCDM is the nested limit c_D → ∞ of every branch, so the Bayes factor is a Savage–Dickey density ratio computable
+      from the Phase 3 chains. The result is inconclusive on the Jeffreys scale on all three branches.</p>
+    <div class="row">
+      <div>
+        <div class="lbl">Δ log Z, afterglow − ΛCDM (3a)</div>
+        <div class="num">+0.53 ± 0.08</div>
+      </div>
+      <div>
+        <div class="lbl">3b</div>
+        <div class="num">+0.35 ± 0.06</div>
+      </div>
+      <div>
+        <div class="lbl">3c</div>
+        <div class="num">+0.02 ± 0.03</div>
+      </div>
+    </div>
+    <div class="row" style="margin-top:8px;">
+      <div>
+        <div class="lbl">Coupling bound, g 95% upper (3b)</div>
+        <div class="num">0.195</div>
+      </div>
+      <div>
+        <div class="lbl">Initial pressure deficit ε_Σ</div>
+        <div class="num">0.012 (&lt;0.061, 95%)</div>
+      </div>
+    </div>
+    <p class="muted">All three |Δ log Z| &lt; 1: the data neither prefer nor exclude the afterglow model, with a mild
+      positive lean toward finite c_D consistent with DESI DR2's soft dynamical-dark-energy hint. The quoted uncertainty
+      is dominated by a boundary-extrapolation systematic of the density-ratio method; a definitive PolyChord
+      nested-sampling computation is staged. The one microscopic amplitude the chains inform is the initial pressure
+      deficit ε_Σ ≈ 0.01, a plausible hidden-sector value.</p>
+  </div>
 
-    // Banner
-    const banner = document.getElementById("data-source-banner");
-    if (banner && isReal) {
-      const isFullyClean = !src.includes("missing") && !src.includes("snapshot") && !src.includes("offline");
-      const stripeColor  = isFullyClean ? "#2ea043" : "#d29922";
-      const bgColor      = isFullyClean ? "#082a17" : "#2a1f05";
-      const textColor    = isFullyClean ? "#7ee2a8" : "#f1cf94";
-      banner.classList.remove("warn");
-      banner.style.cssText = `background:${bgColor};border-left:3px solid ${stripeColor};padding:10px 14px;border-radius:4px;color:${textColor};font-size:14px;`;
-      banner.innerHTML = "Data: <strong>" + j.data_source + "</strong> &middot; generated " +
-        (j.generated_utc || "unknown timestamp") + " &middot; source: <code>mcmc/export_chains_summary.py</code>" +
-        (isFullyClean ? "" : " <em>(partial — see data_source for details).</em>");
-    }
+  <script>
+    // Auto-populate from chains_summary.json. Works when served (localhost:8000);
+    // will silently no-op when opened via file:// due to fetch CORS — that's fine,
+    // the static "— pending —" placeholders remain visible.
+    (async () => {
+      try {
+        const res = await fetch("chains_summary.json", { cache: "no-store" });
+        if (!res.ok) return;
+        const j = await res.json();
+        const src = (j.data_source || "").toLowerCase();
+        const isReal = src.includes("real") && !src.includes("mock");
 
-    // Pending numbers
-    const p = j.pending_numbers || {};
-    const fmt = (v, digits=3) => (v === null || v === undefined) ? "— pending —" : Number(v).toFixed(digits);
-    const setSlot = (id, val, prefix="") => {
-      const el = document.getElementById(id);
-      if (!el) return;
-      if (val === null || val === undefined) { el.textContent = "— pending —"; return; }
-      el.textContent = prefix + Number(val).toFixed(3);
-      el.style.color = "#7ee2a8";
-    };
-    const setLogZ = (id, val, err) => {
-      const el = document.getElementById(id);
-      if (!el) return;
-      if (val === null || val === undefined) { el.textContent = "— pending —"; return; }
-      el.textContent = Number(val).toFixed(2) + (err ? " ± " + Number(err).toFixed(2) : "");
-      el.style.color = "#7ee2a8";
-    };
-    const setDelta = (id, val, err) => {
-      const el = document.getElementById(id);
-      if (!el) return;
-      if (val === null || val === undefined) { el.textContent = "— pending —"; return; }
-      const sign = val >= 0 ? "+" : "";
-      el.textContent = sign + Number(val).toFixed(2) + (err ? " ± " + Number(err).toFixed(2) : "");
-      el.style.color = "#7ee2a8";
-    };
-    setSlot("slot-beta-lower", p.beta_lower95_3b);
-    setLogZ("slot-logz-3a",    p.logZ_3a, p.logZ_3a_stderr);
-    setLogZ("slot-logz-3b",    p.logZ_3b, p.logZ_3b_stderr);
-    setLogZ("slot-logz-3c",    p.logZ_3c, p.logZ_3c_stderr);
-    const d = (p.evidence_deltas && p.evidence_deltas["3b_minus_3a"]) || {};
-    setDelta("slot-delta-3b-3a", d.delta_logZ, d.stderr);
-    setDelta("slot-delta-logz", p.delta_logZ_3b_vs_lcdm);
+        // Banner
+        const banner = document.getElementById("data-source-banner");
+        if (banner && isReal) {
+          const isFullyClean = !src.includes("missing") && !src.includes("snapshot") && !src.includes("offline");
+          const stripeColor = isFullyClean ? "#2ea043" : "#d29922";
+          const bgColor = isFullyClean ? "#082a17" : "#2a1f05";
+          const textColor = isFullyClean ? "#7ee2a8" : "#f1cf94";
+          banner.classList.remove("warn");
+          banner.style.cssText = `background:${bgColor};border-left:3px solid ${stripeColor};padding:10px 14px;border-radius:4px;color:${textColor};font-size:14px;`;
+          banner.innerHTML = "Data: <strong>" + j.data_source + "</strong> &middot; generated " +
+            (j.generated_utc || "unknown timestamp") + " &middot; source: <code>mcmc/export_chains_summary.py</code>" +
+            (isFullyClean ? "" : " <em>(partial — see data_source for details).</em>");
+        }
 
-    // Caveat update once real data lands
-    const status = document.getElementById("pending-status");
-    if (status && isReal) {
-      const stillPending = ["delta_logZ_3b_vs_lcdm"]
-        .filter(k => p[k] === null || p[k] === undefined);
-      let parts = [];
-      if (p.logZ_3a !== null && p.logZ_3b !== null) {
-        parts.push("log Z computed via " + (p.evidence_method || "k-NN estimator") + ".");
+        // Pending numbers
+        const p = j.pending_numbers || {};
+        const fmt = (v, digits = 3) => (v === null || v === undefined) ? "— pending —" : Number(v).toFixed(digits);
+        const setSlot = (id, val, prefix = "") => {
+          const el = document.getElementById(id);
+          if (!el) return;
+          if (val === null || val === undefined) { el.textContent = "— pending —"; return; }
+          el.textContent = prefix + Number(val).toFixed(3);
+          el.style.color = "#7ee2a8";
+        };
+        const setLogZ = (id, val, err) => {
+          const el = document.getElementById(id);
+          if (!el) return;
+          if (val === null || val === undefined) { el.textContent = "— pending —"; return; }
+          el.textContent = Number(val).toFixed(2) + (err ? " ± " + Number(err).toFixed(2) : "");
+          el.style.color = "#7ee2a8";
+        };
+        const setDelta = (id, val, err) => {
+          const el = document.getElementById(id);
+          if (!el) return;
+          if (val === null || val === undefined) { el.textContent = "— pending —"; return; }
+          const sign = val >= 0 ? "+" : "";
+          el.textContent = sign + Number(val).toFixed(2) + (err ? " ± " + Number(err).toFixed(2) : "");
+          el.style.color = "#7ee2a8";
+        };
+        setSlot("slot-beta-lower", p.beta_lower95_3b);
+        setLogZ("slot-logz-3a", p.logZ_3a, p.logZ_3a_stderr);
+        setLogZ("slot-logz-3b", p.logZ_3b, p.logZ_3b_stderr);
+        setLogZ("slot-logz-3c", p.logZ_3c, p.logZ_3c_stderr);
+        const d = (p.evidence_deltas && p.evidence_deltas["3b_minus_3a"]) || {};
+        setDelta("slot-delta-3b-3a", d.delta_logZ, d.stderr);
+        setDelta("slot-delta-logz", p.delta_logZ_3b_vs_lcdm);
+
+        // Caveat update once real data lands
+        const status = document.getElementById("pending-status");
+        if (status && isReal) {
+          const stillPending = ["delta_logZ_3b_vs_lcdm"]
+            .filter(k => p[k] === null || p[k] === undefined);
+          let parts = [];
+          if (p.logZ_3a !== null && p.logZ_3b !== null) {
+            parts.push("log Z computed via " + (p.evidence_method || "k-NN estimator") + ".");
+          }
+          if (d.delta_logZ !== null && d.delta_logZ !== undefined) {
+            const consistent = Math.abs(d.delta_logZ) < 2 * (d.stderr || 0.5);
+            parts.push("Δ log Z (3b − 3a) = " + (d.delta_logZ >= 0 ? "+" : "") + d.delta_logZ.toFixed(2) +
+              " is " + (consistent ? "consistent with zero" : "non-zero") +
+              " — " + (consistent ? "corroborates the flat-β finding (β buys no likelihood improvement, so Bayes' rule predicts ΔlogZ ≈ 0)." : "warrants investigation."));
+          }
+          if (stillPending.length > 0) {
+            parts.push("Still pending: " + stillPending.join(", ") +
+              " (needs fresh ΛCDM chain under same likelihood stack — ~12–24 h runtime on Ubuntu workstation).");
+          } else {
+            parts.push("All gating numbers populated.");
+          }
+          parts.push("Note: the 3b β lower bound 0.053 is prior-dominated (q025 of a flat marginal), not a data constraint.");
+          status.innerHTML = parts.join(" ");
+        }
+      } catch (e) {
+        // file:// or json missing — leave placeholders alone
       }
-      if (d.delta_logZ !== null && d.delta_logZ !== undefined) {
-        const consistent = Math.abs(d.delta_logZ) < 2 * (d.stderr || 0.5);
-        parts.push("Δ log Z (3b − 3a) = " + (d.delta_logZ>=0?"+":"") + d.delta_logZ.toFixed(2) +
-                   " is " + (consistent ? "consistent with zero" : "non-zero") +
-                   " — " + (consistent ? "corroborates the flat-β finding (β buys no likelihood improvement, so Bayes' rule predicts ΔlogZ ≈ 0)." : "warrants investigation."));
-      }
-      if (stillPending.length > 0) {
-        parts.push("Still pending: " + stillPending.join(", ") +
-          " (needs fresh ΛCDM chain under same likelihood stack — ~12–24 h runtime on Ubuntu workstation).");
-      } else {
-        parts.push("All gating numbers populated.");
-      }
-      parts.push("Note: the 3b β lower bound 0.053 is prior-dominated (q025 of a flat marginal), not a data constraint.");
-      status.innerHTML = parts.join(" ");
-    }
-  } catch (e) {
-    // file:// or json missing — leave placeholders alone
-  }
-})();
-</script>
+    })();
+  </script>
 
-<hr style="border:none; border-top:1px solid #30363d; margin: 30px 0;">
+  <hr style="border:none; border-top:1px solid #30363d; margin: 30px 0;">
 
-<p class="muted">Next: <a href="phase3_branches_explorer.html">Explore the posteriors interactively →</a> &nbsp;·&nbsp; <a href="phase3_ym_anchor.html">YM theory anchor →</a> &nbsp;·&nbsp; <a href="phase3_geometry_lesson.html">The §3.11 geometry lesson →</a></p>
+  <p class="muted">Next: <a href="phase3_branches_explorer.html">Explore the posteriors interactively →</a>
+    &nbsp;·&nbsp; <a href="phase3_ym_anchor.html">YM theory anchor →</a> &nbsp;·&nbsp; <a
+      href="phase3_geometry_lesson.html">The §3.11 geometry lesson →</a></p>
 
-<p class="muted">Raw chains, descriptions, and the offline-capable standalone viewer are mirrored to Drive: <a href="https://drive.google.com/drive/folders/1NTaQAoOLeKXfCSWkLLYfu3LSLrkwppud" target="_blank">PhysicsPhD / Tom3abc</a> (general-access link).</p>
+  <p class="muted">Raw chains, descriptions, and the offline-capable standalone viewer are mirrored to Drive: <a
+      href="https://drive.google.com/drive/folders/1NTaQAoOLeKXfCSWkLLYfu3LSLrkwppud" target="_blank">PhysicsPhD /
+      Tom3abc</a> (general-access link).</p>
 
 </body>
+
 </html>

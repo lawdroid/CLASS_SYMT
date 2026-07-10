@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Phase 3 — the §3.11 geometry lesson</title>
+<title>Phase 3: the §3.11 geometry lesson</title>
 <script src="https://cdn.plot.ly/plotly-2.30.0.min.js"></script>
 <style>
   body { font-family: -apple-system, Segoe UI, sans-serif; max-width: 980px; margin: 20px auto; padding: 0 20px; background: #0f1420; color: #e6edf3; line-height: 1.55; }
@@ -32,7 +32,7 @@
 <body>
 
 <h1>The §3.11 geometry lesson</h1>
-<p class="muted">Three mock posteriors with similar <em>indirect</em> signals — same ρ(median)/ρ(peak) range, similar R−1 plateau character, similar best-fit vs median drift — but completely different real geometry. The lesson: <strong>look at the 2D KDE before telling a story</strong>. <a href="phase3_summary.html">← back to summary</a></p>
+<p class="muted">Three mock posteriors with similar <em>indirect</em> signals (same ρ(median)/ρ(peak) range, similar R−1 plateau character, similar best-fit vs median drift) but completely different real geometry. The lesson: <strong>look at the 2D KDE before telling a story</strong>. <a href="phase3_summary.html">← back to summary</a></p>
 
 <div class="card">
 <h2>Three posterior shapes</h2>
@@ -54,7 +54,7 @@
     </div>
   </div>
   <div class="geo-card">
-    <div class="gh">B. Genuinely bimodal</div>
+    <div class="gh">B. Truly bimodal</div>
     <div class="gs">Two clean basins separated by a low-density valley. Median sits in the valley.</div>
     <div class="geo-plot" id="geoB"></div>
     <div class="geo-stats">
@@ -87,17 +87,17 @@
 <tr><td style="padding:8px 0; color:#e6edf3;">long R−1 plateau (slow mixing)</td><td style="color:#f1cf94;">often</td><td style="color:#f1cf94;">often</td><td style="color:#f1cf94;">often</td></tr>
 <tr><td style="padding:8px 0; color:#e6edf3;">visible 2D bimodality</td><td style="color:#5dcaa5;">no</td><td style="color:#f0997b;">yes</td><td style="color:#5dcaa5;">no</td></tr>
 </table>
-<p class="muted" style="margin-top:10px;">The first three rows can't tell A from B. Only the KDE — the bottom row — actually separates them. Two of these three posteriors are unimodal; one is bimodal. From the indirect signals alone, you cannot tell which is which.</p>
+<p class="muted" style="margin-top:10px;">The first three rows can't tell A from B. Only the KDE (the bottom row) actually separates them. Two of these three posteriors are unimodal; one is bimodal. From the indirect signals alone, you cannot tell which is which.</p>
 </div>
 
 <div class="verdict">
-The 3b "two clean basins" reconstruction from 2026-05-12 to 2026-05-15 was a version of this trap — the indirect signals all flashed bimodality, but the real KDE showed shape A: skewed unimodal. The model implied by those indirect signals was geometrically wrong, and the rest of the analysis built on it had to be unwound. The cost was ~3 days. Every future Phase has to pull the KDE first.
+The 3b "two clean basins" reconstruction from 2026-05-12 to 2026-05-15 was a version of this trap. The indirect signals all flashed bimodality, but the real KDE showed shape A: skewed unimodal. The model implied by those indirect signals was geometrically wrong, and the rest of the analysis built on it had to be unwound. The cost was ~3 days. Every future Phase has to pull the KDE first.
 </div>
 
 <div class="card">
 <h2>The rule, codified for next time</h2>
 <ol>
-<li><span class="key">Before</span> describing posterior geometry in writing or to a collaborator, pull the actual 2D KDE for the relevant parameter pair from the converged chain. Use <code>getdist</code>, <code>cobaya-post</code>, or the <code>chains_summary.json</code> exporter — but always start with the KDE.</li>
+<li><span class="key">Before</span> describing posterior geometry in writing or to a collaborator, pull the actual 2D KDE for the relevant parameter pair from the converged chain. Use <code>getdist</code>, <code>cobaya-post</code>, or the <code>chains_summary.json</code> exporter, but always start with the KDE.</li>
 <li><span class="key">Treat</span> <code>ρ(median)/ρ(peak) &lt; 0.5</code> as "median is in low-density territory; the geometry needs investigation," <strong>not</strong> as "bimodal." Same for R−1 plateau character and best-fit drift.</li>
 <li><span class="key">Quote</span> percentiles of a flat 1D marginal as descriptive statistics of the prior, not as data-driven bounds. (β's flat 3b marginal is the example: <code>q16 = 0.34</code> does not mean "β &gt; 0.34 ruled in"; it means 16% across a uniform range.)</li>
 </ol>

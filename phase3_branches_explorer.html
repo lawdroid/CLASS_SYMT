@@ -44,7 +44,7 @@
 <h1>Phase 3 explorer</h1>
 <p class="muted">2D KDEs for the three pre-registered branches. Pick a branch, pick a parameter pair, see the 68% and 95% credible contours. <a href="phase3_summary.html">← back to summary</a></p>
 
-<div class="warn">Data is from <strong>mock samples</strong> in <code>chains_summary.json</code>. The shapes are realistic but the numbers are not from real chains yet.</div>
+<div style="background:#082a17;border-left:3px solid #2ea043;padding:10px 14px;border-radius:4px;color:#7ee2a8;font-size:13px;margin:10px 0;">Data is from the converged Phase 3 chains (final) in <code>chains_summary.json</code>, exported via <code>mcmc/export_chains_summary.py</code>. The 2D shapes are real KDEs from those chains.</div>
 
 <div class="card">
   <div class="controls">
@@ -59,12 +59,12 @@
 </div>
 
 <div class="card">
-  <h2 style="margin-top:0;">Stats — current branch / pair</h2>
+  <h2 style="margin-top:0;">Stats: current branch / pair</h2>
   <div class="stat-grid">
-    <div class="stat-card"><div class="l">x median (q16, q84)</div><div class="v" id="xmed">—</div></div>
-    <div class="stat-card"><div class="l">y median (q16, q84)</div><div class="v" id="ymed">—</div></div>
-    <div class="stat-card"><div class="l">ρ(median) / ρ(peak)</div><div class="v" id="rho">—</div><div class="n" id="rhon">—</div></div>
-    <div class="stat-card"><div class="l">R−1 (chain)</div><div class="v" id="rminus1">—</div></div>
+    <div class="stat-card"><div class="l">x median (q16, q84)</div><div class="v" id="xmed">–</div></div>
+    <div class="stat-card"><div class="l">y median (q16, q84)</div><div class="v" id="ymed">–</div></div>
+    <div class="stat-card"><div class="l">ρ(median) / ρ(peak)</div><div class="v" id="rho">–</div><div class="n" id="rhon">–</div></div>
+    <div class="stat-card"><div class="l">R−1 (chain)</div><div class="v" id="rminus1">–</div></div>
   </div>
 </div>
 
@@ -88,7 +88,7 @@
 </div>
 
 <div class="card">
-  <div class="lesson" id="lesson">—</div>
+  <div class="lesson" id="lesson">–</div>
 </div>
 
 <script>
@@ -172,7 +172,7 @@
   }
 
   function fmt(v) {
-    if (v == null || !isFinite(v)) return "—";
+    if (v == null || !isFinite(v)) return "–";
     if (Math.abs(v) < 1e-9) return "0";
     if (Math.abs(v) >= 100) return v.toFixed(0);
     if (Math.abs(v) >= 10) return v.toFixed(1);
@@ -254,8 +254,8 @@
     const rho = pmax > 0 ? densityAt(kde, z, xmedRaw, ymedRaw) / pmax : 0;
     document.getElementById("rho").textContent = rho.toFixed(2);
     document.getElementById("rhon").textContent = rho < 0.5
-      ? "median in low-density region — skewed OR bimodal (KDE decides)"
-      : "median near a peak — geometry behaves";
+      ? "median in low-density region: skewed or bimodal (KDE decides)"
+      : "median near a peak: geometry behaves";
     document.getElementById("rminus1").textContent = branchData.R1.toFixed(3);
 
     const lessonEl = document.getElementById("lesson");
@@ -299,8 +299,8 @@
 
   const LESSONS = {
     "3a": "Baseline. β = 0 fixed, so the posterior in (Ωₘ, h, σ₈) is a clean Gaussian. This is the reference geometry; whatever 3b and 3c do relative to this is what the new physics is asking for.",
-    "3b": "Non-crossing. β has a skewed unimodal posterior — set y = β and watch the 1D median drift well off the peak. ρ(median)/ρ(peak) drops, but the 2D KDE remains a single ridge, not two basins. This is exactly the §3.11 trap: indirect signals can't tell skewed-unimodal from bimodal. See the geometry-lesson page.",
-    "3c": "Crossing branch (B1-narrow). β is restricted to [2.65, 2.75] — inside the structurally-allowed window 3√3/2 < β < 2√3 (Eq. 96, Afterglow paper). The β marginal mirrors the prior; the data does not pick a value within the window.",
+    "3b": "Non-crossing. β is unidentified; its 1D marginal is essentially the flat prior. The skew that trips the indirect signals lives in c_D, whose long right tail toward the prior ceiling pulls the joint median into lower-density territory. ρ(median)/ρ(peak) drops and the best-fit drifts, but the 2D KDE stays a single ridge, not two basins. This is exactly the §3.11 trap: indirect signals can't tell skewed-unimodal from bimodal. See the geometry-lesson page.",
+    "3c": "Crossing branch (B1-narrow). β is restricted to [2.65, 2.75], inside the structurally-allowed window 3√3/2 < β < 2√3 (Eq. 96, Afterglow paper). The β marginal mirrors the prior; the data does not pick a value within the window.",
   };
 
   function setBranch(b) {
@@ -348,6 +348,9 @@
     .then(r => r.json())
     .then(json => {
       DATA = json;
+      // Show the dark-energy equation of state as w_X, per the paper: chi is the
+      // memory-mismatch variable, so the w_chi label would collide with it.
+      if (DATA.pretty) DATA.pretty.w_chi = "w_X";
       populateSelectors();
       wireBranchButtons();
       renderAll();
