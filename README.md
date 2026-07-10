@@ -5,8 +5,8 @@ implementing **Afterglow Dark Energy**:
 
 > T. G. Martin and I.-G. Koh, *Afterglow Dark Energy: Apparent Phantom
 > Crossing from Hidden Confinement, Tested Against Planck, DESI DR2,
-> and Pantheon+*, submitted to JCAP (2026). arXiv: tbd ·
-> Code archive DOI: 
+> and Pantheon+*, submitted to PDU (2026). SSRN: tbd ·
+> Code archive DOI: tbd
 
 ## The model in brief
 
@@ -88,7 +88,7 @@ Educational companions; open locally in a browser:
 - [`phase3_geometry_lesson.html`](phase3_geometry_lesson.html) — why you pull the 2D KDE before
   storytelling
 
-## Key equations implemented (numbering of the submitted paper)
+## Key equations implemented
 
 | Eq. | Meaning |
 |-----|---------|
@@ -102,7 +102,7 @@ Educational companions; open locally in a browser:
 | (5.27), (5.29)–(5.31) | Stabilised closure and perturbation system |
 | (5.8), (4.39) | Source-free scaling and late-time asymptotics |
 
-In-code comments reference the April 2026 working draft's numbering;
+In-code comments reference the working draft's numbering;
 the mapping to the submitted paper is maintained in
 [`PLAN_AFTERGLOW.md`](PLAN_AFTERGLOW.md).
 
