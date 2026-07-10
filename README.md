@@ -1,5 +1,7 @@
 # CLASS_SYMT — Afterglow Dark Energy
 
+![Afterglow Dark Energy](external/img/Afterglow Dark Energy repo.png)
+
 An independent derivative of the CLASS Boltzmann code (not a fork)
 implementing **Afterglow Dark Energy**:
 
