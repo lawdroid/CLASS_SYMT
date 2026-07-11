@@ -64,7 +64,7 @@ releases.
     ./class afterglow.ini          # ΛCDM-compatible defaults
     python -m pytest test/         # 65 assertions, background + perturbations
 
-Tag `afterglow` (commit `d382e60`) is the exact state behind the paper's chains.
+Tag `afterglow` (commit `b9d78d9`) is the exact state behind the paper's chains.
 
 ## Repository map
 
