@@ -9,6 +9,8 @@ implementing **Afterglow Dark Energy**:
 > Crossing from Hidden Confinement, Tested Against Planck, DESI DR2,
 > and Pantheon+*, submitted to PDU (2026). SSRN: tbd ·
 > Code archive DOI: [![DOI](https://zenodo.org/badge/1198987618.svg)](https://doi.org/10.5281/zenodo.21301803)
+>
+> [Link to Preprint](doc/Afterglow_Dark_Energy__Martin_Koh.pdf)
 
 ## The model in brief
 
