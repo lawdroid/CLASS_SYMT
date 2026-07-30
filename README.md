@@ -92,23 +92,24 @@ Educational companions; open locally in a browser:
 - [`phase3_geometry_lesson.html`](phase3_geometry_lesson.html) — why you pull the 2D KDE before
   storytelling
 
-## Key equations implemented
+## Key equations implemented (numbering follows the SSRN preprint)
 
 | Eq. | Meaning |
 |-----|---------|
-| (4.14) | Intrinsic EoS w_X = −1 + 1/(3c_D) |
-| (4.15) | Density ratio r = ρ_c/ρ_X |
-| (4.18) | Signed kernel Ψ(r) |
-| (4.20)–(4.21) | Loading–unloading relaxation law |
-| (4.25) | Derived exchange law Q |
-| (4.27)–(4.28) | Background continuity equations |
-| (4.30) | Effective equation of state w_eff |
-| (5.27), (5.29)–(5.31) | Stabilised closure and perturbation system |
-| (5.8), (4.39) | Source-free scaling and late-time asymptotics |
+| (31) | Intrinsic EoS w_X = −1 + 1/(3c_D) |
+| (32) | Density ratio r = ρ_c/ρ_X |
+| (35) | Signed kernel Ψ(r) |
+| (37)–(38) | Loading–unloading relaxation law |
+| (42) | Derived exchange law Q |
+| (44)–(45) | Background continuity equations |
+| (47) | Effective equation of state w_eff |
+| (84), (86)–(88) | Stabilised closure and perturbation system |
+| (65), (56) | Source-free scaling and late-time asymptotics |
 
+Numbers refer to the preprint
+([SSRN 10.2139/ssrn.7097478](https://doi.org/10.2139/ssrn.7097478)).
 In-code comments reference the working draft's numbering;
-the mapping to the submitted paper is maintained in
-[`PLAN_AFTERGLOW.md`](PLAN_AFTERGLOW.md).
+the mapping is maintained in [`PLAN_AFTERGLOW.md`](PLAN_AFTERGLOW.md).
 
 ## Conventions
 
